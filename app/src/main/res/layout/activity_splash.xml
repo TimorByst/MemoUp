@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".Activity_Splash"
+    android:background="#E8C37B"
+    >
+
+    <androidx.appcompat.widget.AppCompatImageView
+        android:id="@+id/splash_IMG_logo"
+        android:visibility="gone"
+        android:layout_width="100dp"
+        android:layout_height="100dp"
+        android:layout_centerInParent="true" />
+    <com.google.android.material.textview.MaterialTextView
+        android:id="@+id/splash_TXT_name"
+        android:visibility="gone"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:layout_above="@id/splash_IMG_logo"
+        android:paddingBottom="20dp"
+        android:text="@string/memoup"
+        android:textColor="#D53D5C93"
+        android:textSize="50sp"/>
+    <com.google.android.material.textview.MaterialTextView
+        android:id="@+id/splash_TXT_creator"
+        android:visibility="gone"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:layout_alignParentBottom="true"
+        android:text="@string/by_beast_games_ltd"
+        android:paddingBottom="10dp"
+        android:textSize="15sp"/>
+</RelativeLayout>
