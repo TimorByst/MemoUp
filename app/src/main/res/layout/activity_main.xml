@@ -6,7 +6,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".Activity_Main"
-    android:background="#E8C37B">
+    android:background="@drawable/memo_up_background">
 
     <com.google.android.material.textview.MaterialTextView
         android:id="@+id/player_TXT_name"

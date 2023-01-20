@@ -1,0 +1,39 @@
+  {
+  "project_info": {
+    "project_number": "191927961883",
+    "project_id": "memoup-ab8a8",
+    "storage_bucket": "memoup-ab8a8.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:191927961883:android:c0394df0b46e929913abbe",
+        "android_client_info": {
+          "package_name": "com.example.memoup"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "191927961883-jg4na0pv3uujtq2ale6a6r099ijhhp4g.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBCAWXzSq3PR6DEsxsrOslRiuv-t1TnoUM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "191927961883-jg4na0pv3uujtq2ale6a6r099ijhhp4g.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
