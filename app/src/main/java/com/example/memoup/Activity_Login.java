@@ -51,8 +51,8 @@ public class Activity_Login extends AppCompatActivity {
             // add logic for known user
         }
 
-
-
+        Intent intent = new Intent(this, Activity_GameLevel.class);
+        startActivity(intent);
     }
 
     private void prettyLogin(){
