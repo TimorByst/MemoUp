@@ -1,7 +1,12 @@
 package com.example.memoup;
 
 import android.util.Log;
+
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
+
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -16,21 +21,34 @@ public class GameManager {
     private int facedUpCards = 0;
     /*The number of matches found so far*/
     private int matchesFound = 0;
-    /*Used to indicate if a card is faced up or down (1 - up, 0 - down)*/
-    private int[][] cardState;
+    /*Used to indicate if a card is faced up or down (true - up, false - down)*/
+    private boolean[][] cardFacedUp;
+    /*Used to hold the current faced up cardes indexes*/
+    private ArrayList<int[]> currentFacedUpCards = new ArrayList<int[]>(){
+        {
+            add(new int[2]);
+            add(new int[2]);
+        }
+    };
     /*Used to hold the image that is being compared to*/
     private String comparisonCard;
     /*Used to hold the image location on board*/
     private String[][] cardImages;
+    /*Default name showed on faced down cards*/
+    private final String APP_NAME = "MemoUp";
     /*Used to map image name to its R.drawable.image*/
     private final Map<String, Integer>images = new HashMap<>();
-
+    private FirebaseStorage firebaseStorage;
+    private List<String> imageList;
+    private final int SMALL = 4;
+    private final int MEDIUM = 5;
     /**
      * GameManager constructor, receives the board size and initializes game
      * @param boardSize the size of the board
      */
     public GameManager(int boardSize){
         this.boardSize = boardSize;
+        firebaseStorage = FirebaseStorage.getInstance();
         initBoard();
         initImageMap();
         randomizeImageLocations();
@@ -40,18 +58,36 @@ public class GameManager {
      * Sets all cards state to 0 (indicates that they are face down)
      */
     private void initBoard(){
-        cardState = new int[this.boardSize][this.boardSize];
+        cardFacedUp = new boolean[this.boardSize][this.boardSize];
         for(int i=0; i<this.boardSize; i++){
-            for(int j=0; j<this.boardSize; j++){
-                cardState[i][j] = 0;
-            }
+            Arrays.fill(cardFacedUp[i], false);
         }
     }
 
     /**
      * This function initializes the image resources map
      */
-    private void initImageMap(){
+    private void initImageMap() {
+/*        images.put("Bear", firebaseStorage.getReference().child("images/bear.png"));
+        images.put("Cat", firebaseStorage.getReference().child("images/cat.png"));
+        images.put("Cougar", firebaseStorage.getReference().child("images/cougar.png"));
+        images.put("Dog", firebaseStorage.getReference().child("images/dog.png"));
+        images.put("Elephant", firebaseStorage.getReference().child("images/elephant.png"));
+        images.put("Fox", firebaseStorage.getReference().child("images/fox.png"));
+        images.put("Frog", firebaseStorage.getReference().child("images/frog.png"));
+        images.put("Koala", firebaseStorage.getReference().child("images/koala.png"));
+        images.put("Leopard", firebaseStorage.getReference().child("images/leopard.png"));
+        images.put("Lion", firebaseStorage.getReference().child("images/lion.png"));
+        images.put("Monkey", firebaseStorage.getReference().child("images/monkey.png"));
+        images.put("Panda", firebaseStorage.getReference().child("images/panda.png"));
+        images.put("Panther", firebaseStorage.getReference().child("images/panther.png"));
+        images.put("Rat", firebaseStorage.getReference().child("images/rat.png"));
+        images.put("Red_Panda", firebaseStorage.getReference().child("images/red_panda.png"));
+        images.put("Rhino", firebaseStorage.getReference().child("images/rhino.png"));
+        images.put("Tiger", firebaseStorage.getReference().child("images/tiger.png"));
+        images.put("Wolf", firebaseStorage.getReference().child("images/wolf.png"));
+        images.put("Jester", firebaseStorage.getReference().child("images/jester.png"));*/
+
         images.put("Bear", R.drawable.bear);
         images.put("Cat", R.drawable.cat);
         images.put("Cougar", R.drawable.cougar);
@@ -70,6 +106,7 @@ public class GameManager {
         images.put("Rhino", R.drawable.rhino);
         images.put("Tiger", R.drawable.tiger);
         images.put("Wolf", R.drawable.wolf);
+        images.put("Jester", R.drawable.jester);
     }
 
     /**
@@ -77,7 +114,7 @@ public class GameManager {
      * to randomize the image location on the board
      */
     private void randomizeImageLocations(){
-        List<String> imageList = new ArrayList<>();
+        imageList = new ArrayList<>();
         imageList.add("Bear");
         imageList.add("Cat");
         imageList.add("Cougar");
@@ -86,23 +123,35 @@ public class GameManager {
         imageList.add("Fox");
         imageList.add("Frog");
         imageList.add("Koala");
-        imageList.add("Leopard");
-        imageList.add("Lion");
-        imageList.add("Monkey");
-        imageList.add("Panda");
-        imageList.add("Panther");
-        imageList.add("Rat");
-        imageList.add("Red_Panda");
-        imageList.add("Rhino");
-        imageList.add("Tiger");
-        imageList.add("Wolf");
 
+        if(boardSize>SMALL) {
+            imageList.add("Leopard");
+            imageList.add("Lion");
+            imageList.add("Monkey");
+            imageList.add("Panda");
+        }
+
+        if(boardSize>MEDIUM) {
+            imageList.add("Panther");
+            imageList.add("Rat");
+            imageList.add("Red_Panda");
+            imageList.add("Rhino");
+            imageList.add("Tiger");
+            imageList.add("Wolf");
+        }
+
+        List<String> imageListCopy = new ArrayList<>(imageList);
+        imageList.addAll(imageListCopy);
+        if(boardSize==MEDIUM){
+            imageList.add("Jester");
+        }
         try {
             Collections.shuffle(imageList);
         }catch (UnsupportedOperationException e){
             Log.d("my_tag","Error while trying to shuffle the images: "+e);
         }
 
+        cardImages = new String[boardSize][boardSize];
         for(int i=0;i<boardSize;i++){
             for(int j=0; j<boardSize; j++){
                 cardImages[i][j] = imageList.remove(0);
@@ -117,12 +166,14 @@ public class GameManager {
      * @param col the image col
      */
     public void flipCard(int row, int col){
-        if(cardState[row][col] == 0){
+        cardFacedUp[row][col] = !cardFacedUp[row][col];
+        if(cardFacedUp[row][col]){
+            currentFacedUpCards.set(facedUpCards, new int[]{row, col});
             facedUpCards++;
+            Log.d("TIMOR", "number of flipped cards in GameManager"+getFacedUpCards());
         }else{
             facedUpCards--;
         }
-        cardState[row][col] = ~cardState[row][col];
     }
 
     /**
@@ -133,18 +184,18 @@ public class GameManager {
      * @param imageCol image col
      * @return 1 if equal else 0
      */
-    public int checkMatch(int imageRow, int imageCol){
+    public boolean checkMatch(int imageRow, int imageCol){
         if(facedUpCards == 2){
             //Compare cards
             if(comparisonCard.equalsIgnoreCase(cardImages[imageRow][imageCol])){
                 matchesFound++;
-                return 1;
+                return true;
             }
         }else{
             //wait for another card
             comparisonCard = cardImages[imageRow][imageCol];
         }
-        return 0;
+        return false;
     }
 
     /**
@@ -156,13 +207,13 @@ public class GameManager {
      * @throws ArrayIndexOutOfBoundsException if the index that passed is not in bounds
      * @throws NullPointerException if there is no such image resource in the resources list
      */
-    public int getImageResource(int row, int col)
+    public Integer getImageResource(int row, int col)
             throws ArrayIndexOutOfBoundsException, NullPointerException{
         if(row > boardSize || col > boardSize ){
             throw new ArrayIndexOutOfBoundsException(
                     "Index " + (row > boardSize ? row : col) + " is out of bounds");
         }
-        Integer imageResource = images.get(cardImages[row][col]);
+            Integer imageResource = images.get(cardImages[row][col]);
         if(imageResource != null){
             return imageResource;
         }else{
@@ -180,4 +231,24 @@ public class GameManager {
     public boolean isGameOver(){
         return matchesFound == (boardSize % 2 == 0 ? boardSize : boardSize - 1) * boardSize / 2;
     }
+
+    public int getBoardSize(){return boardSize;}
+
+    public boolean isCardFacedUp(int row, int col){
+        return cardFacedUp[row][col];
+    }
+
+    public String getImageName(int row, int col){
+        return cardImages[row][col];
+    }
+
+    public String getDefaultImageText(){return APP_NAME;}
+
+    public Integer getDefaultImageReference(){
+        return R.drawable.question_mark;
+    }
+
+    public int getFacedUpCards(){return facedUpCards;}
+
+    public ArrayList<int[]> getFlippedCards(){return currentFacedUpCards;}
 }
