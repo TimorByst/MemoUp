@@ -21,6 +21,7 @@ public class Activity_GameLevel extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_game_level);
+        MyUtility.hideSystemUI(this);
         findViews();
         initButton(boardSize_BTN_4);
         initButton(boardSize_BTN_5);
@@ -57,5 +58,13 @@ public class Activity_GameLevel extends AppCompatActivity {
         Intent intent = new Intent(this, Activity_Game.class);
         intent.putExtra("boardSize", boardSize);
         startActivity(intent);
+    }
+
+    @Override
+    public void onWindowFocusChanged(boolean hasFocus) {
+        super.onWindowFocusChanged(hasFocus);
+        if (hasFocus) {
+            MyUtility.hideSystemUI(this);
+        }
     }
 }

@@ -24,7 +24,7 @@ public class GameManager {
     /*Used to indicate if a card is faced up or down (true - up, false - down)*/
     private boolean[][] cardFacedUp;
     /*Used to hold the current faced up cardes indexes*/
-    private ArrayList<int[]> currentFacedUpCards = new ArrayList<int[]>(){
+    private ArrayList<int[]> currentFacedUpCards = new ArrayList<int[]>() {
         {
             add(new int[2]);
             add(new int[2]);
@@ -37,16 +37,18 @@ public class GameManager {
     /*Default name showed on faced down cards*/
     private final String APP_NAME = "MemoUp";
     /*Used to map image name to its R.drawable.image*/
-    private final Map<String, Integer>images = new HashMap<>();
+    private final Map<String, Integer> images = new HashMap<>();
     private FirebaseStorage firebaseStorage;
     private List<String> imageList;
     private final int SMALL = 4;
     private final int MEDIUM = 5;
+
     /**
      * GameManager constructor, receives the board size and initializes game
+     *
      * @param boardSize the size of the board
      */
-    public GameManager(int boardSize){
+    public GameManager(int boardSize) {
         this.boardSize = boardSize;
         firebaseStorage = FirebaseStorage.getInstance();
         initBoard();
@@ -57,9 +59,9 @@ public class GameManager {
     /**
      * Sets all cards state to 0 (indicates that they are face down)
      */
-    private void initBoard(){
+    private void initBoard() {
         cardFacedUp = new boolean[this.boardSize][this.boardSize];
-        for(int i=0; i<this.boardSize; i++){
+        for (int i = 0; i < this.boardSize; i++) {
             Arrays.fill(cardFacedUp[i], false);
         }
     }
@@ -113,7 +115,7 @@ public class GameManager {
      * This function randomizes the image indexes in order
      * to randomize the image location on the board
      */
-    private void randomizeImageLocations(){
+    private void randomizeImageLocations() {
         imageList = new ArrayList<>();
         imageList.add("Bear");
         imageList.add("Cat");
@@ -124,14 +126,14 @@ public class GameManager {
         imageList.add("Frog");
         imageList.add("Koala");
 
-        if(boardSize>SMALL) {
+        if (boardSize > SMALL) {
             imageList.add("Leopard");
             imageList.add("Lion");
             imageList.add("Monkey");
             imageList.add("Panda");
         }
 
-        if(boardSize>MEDIUM) {
+        if (boardSize > MEDIUM) {
             imageList.add("Panther");
             imageList.add("Rat");
             imageList.add("Red_Panda");
@@ -142,18 +144,18 @@ public class GameManager {
 
         List<String> imageListCopy = new ArrayList<>(imageList);
         imageList.addAll(imageListCopy);
-        if(boardSize==MEDIUM){
+        if (boardSize == MEDIUM) {
             imageList.add("Jester");
         }
         try {
             Collections.shuffle(imageList);
-        }catch (UnsupportedOperationException e){
-            Log.d("my_tag","Error while trying to shuffle the images: "+e);
+        } catch (UnsupportedOperationException e) {
+            Log.d("my_tag", "Error while trying to shuffle the images: " + e);
         }
 
         cardImages = new String[boardSize][boardSize];
-        for(int i=0;i<boardSize;i++){
-            for(int j=0; j<boardSize; j++){
+        for (int i = 0; i < boardSize; i++) {
+            for (int j = 0; j < boardSize; j++) {
                 cardImages[i][j] = imageList.remove(0);
             }
         }
@@ -162,61 +164,74 @@ public class GameManager {
     /**
      * This function changes the card state
      * and changes the number of cards that are flipped up accordingly
+     *
      * @param row the image row
      * @param col the image col
      */
-    public void flipCard(int row, int col){
+    public void flipCard(int row, int col) {
         cardFacedUp[row][col] = !cardFacedUp[row][col];
-        if(cardFacedUp[row][col]){
+        if (cardFacedUp[row][col]) {
             currentFacedUpCards.set(facedUpCards, new int[]{row, col});
             facedUpCards++;
-            Log.d("TIMOR", "number of flipped cards in GameManager"+getFacedUpCards());
-        }else{
+            Log.d("TIMOR", "number of flipped cards in GameManager" + getFacedUpCards());
+        } else {
             facedUpCards--;
         }
     }
 
     /**
-     * This function receives image indexes, if there are two cards that are face up
-     * then compare them, if they are equal by name, return 1
-     * else if they are not equal or there is only one card faced up return 0.
+     * This function receives image indexes, if the image is equal by name to the comparison card,
+     * return true
+     * else return false.
+     *
      * @param imageRow image row
      * @param imageCol image col
      * @return 1 if equal else 0
      */
-    public boolean checkMatch(int imageRow, int imageCol){
-        if(facedUpCards == 2){
-            //Compare cards
-            if(comparisonCard.equalsIgnoreCase(cardImages[imageRow][imageCol])){
-                matchesFound++;
-                return true;
-            }
-        }else{
-            //wait for another card
-            comparisonCard = cardImages[imageRow][imageCol];
+    public boolean checkMatch(int imageRow, int imageCol) {
+        if (comparisonCard.equalsIgnoreCase(cardImages[imageRow][imageCol])) {
+            matchesFound++;
+            return true;
         }
         return false;
     }
 
     /**
+     * This function sets the comparison image,
+     * it receives the image row and col and set the appropriate image to the comparisonImage value
+     * @param imageRow image row
+     * @param imageCol image col
+     * @throws ArrayIndexOutOfBoundsException if row or col are out of bounds
+     */
+    public void setComparisonCard(int imageRow, int imageCol){
+        if(imageRow > boardSize || imageCol > boardSize){
+            throw new ArrayIndexOutOfBoundsException(
+                    "Index " + (imageRow > boardSize ? imageRow : imageCol) + " is out of bounds");
+        }else {
+            comparisonCard = cardImages[imageRow][imageCol];
+        }
+    }
+
+    /**
      * This function receives the a location in a matrix
      * and return the image resource associated with that location.
+     *
      * @param row the matrix rox
      * @param col the matrix col
      * @return an integer image resource
      * @throws ArrayIndexOutOfBoundsException if the index that passed is not in bounds
-     * @throws NullPointerException if there is no such image resource in the resources list
+     * @throws NullPointerException           if there is no such image resource in the resources list
      */
     public Integer getImageResource(int row, int col)
-            throws ArrayIndexOutOfBoundsException, NullPointerException{
-        if(row > boardSize || col > boardSize ){
+            throws ArrayIndexOutOfBoundsException, NullPointerException {
+        if (row > boardSize || col > boardSize) {
             throw new ArrayIndexOutOfBoundsException(
                     "Index " + (row > boardSize ? row : col) + " is out of bounds");
         }
-            Integer imageResource = images.get(cardImages[row][col]);
-        if(imageResource != null){
+        Integer imageResource = images.get(cardImages[row][col]);
+        if (imageResource != null) {
             return imageResource;
-        }else{
+        } else {
             throw new NullPointerException(cardImages[row][col] + " doesn't exists in images");
         }
     }
@@ -226,29 +241,38 @@ public class GameManager {
      * by comparing the current number of matches
      * to total number of matches that is possible which is half of the boardSize product,
      * if the boardSize is odd then subtract one.
+     *
      * @return true if all matches have been found else false.
      */
-    public boolean isGameOver(){
+    public boolean isGameOver() {
         return matchesFound == (boardSize % 2 == 0 ? boardSize : boardSize - 1) * boardSize / 2;
     }
 
-    public int getBoardSize(){return boardSize;}
+    public int getBoardSize() {
+        return boardSize;
+    }
 
-    public boolean isCardFacedUp(int row, int col){
+    public boolean isCardFacedUp(int row, int col) {
         return cardFacedUp[row][col];
     }
 
-    public String getImageName(int row, int col){
+    public String getImageName(int row, int col) {
         return cardImages[row][col];
     }
 
-    public String getDefaultImageText(){return APP_NAME;}
+    public String getDefaultImageText() {
+        return APP_NAME;
+    }
 
-    public Integer getDefaultImageReference(){
+    public Integer getDefaultImageReference() {
         return R.drawable.question_mark;
     }
 
-    public int getFacedUpCards(){return facedUpCards;}
+    public int getFacedUpCards() {
+        return facedUpCards;
+    }
 
-    public ArrayList<int[]> getFlippedCards(){return currentFacedUpCards;}
+    public ArrayList<int[]> getFlippedCards() {
+        return currentFacedUpCards;
+    }
 }

@@ -5,16 +5,16 @@ import androidx.appcompat.app.AppCompatActivity;
 import android.content.Intent;
 import android.os.Bundle;
 
-public class Activity_Main extends AppCompatActivity {
+public class Activity_MainMenu extends AppCompatActivity {
 
     private int boardSize;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+        setContentView(R.layout.activity_main_menu);
         Intent previous =getIntent();
-        boardSize =previous.getIntExtra("boardSize", boardSize);
+        boardSize = previous.getIntExtra("boardSize", boardSize);
     }
 
     private void findViews(){
