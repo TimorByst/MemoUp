@@ -3,7 +3,6 @@ package com.example.memoup;
 import android.util.Log;
 
 import com.google.firebase.storage.FirebaseStorage;
-import com.google.firebase.storage.StorageReference;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -42,6 +41,26 @@ public class GameManager {
     private List<String> imageList;
     private final int SMALL = 4;
     private final int MEDIUM = 5;
+    private MyUser player_1;
+    private MyUser player_2;
+
+    public MyUser getPlayer_1() {
+        return player_1;
+    }
+
+    public GameManager setPlayer_1(MyUser player_1) {
+        this.player_1 = player_1;
+        return this;
+    }
+
+    public MyUser getPlayer_2() {
+        return player_2;
+    }
+
+    public GameManager setPlayer_2(MyUser player_2) {
+        this.player_2 = player_2;
+        return this;
+    }
 
     /**
      * GameManager constructor, receives the board size and initializes game

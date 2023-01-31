@@ -16,12 +16,17 @@ public class Activity_GameLevel extends AppCompatActivity {
     private MaterialButton boardSize_BTN_6;
     private MaterialTextView creator_TXT;
     private MaterialTextView headline_TXT_level;
+    private MyUser player_1;
+    private MyUser player_2;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_game_level);
         MyUtility.hideSystemUI(this);
+        setContentView(R.layout.activity_game_level);
+        Intent previous = getIntent();
+        player_1 = (MyUser) previous.getSerializableExtra("player_1");
         findViews();
         initButton(boardSize_BTN_4);
         initButton(boardSize_BTN_5);
@@ -56,6 +61,7 @@ public class Activity_GameLevel extends AppCompatActivity {
             boardSize = 6;
         }
         Intent intent = new Intent(this, Activity_Game.class);
+        intent.putExtra("player_1", player_1);
         intent.putExtra("boardSize", boardSize);
         startActivity(intent);
     }

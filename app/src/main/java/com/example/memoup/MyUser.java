@@ -1,19 +1,36 @@
 package com.example.memoup;
 
-public class User {
+import java.io.Serializable;
+
+public class MyUser implements Serializable {
 
     private String phoneNumber;
+
+    private String username;
+
     private String id;
     private int gamesPlayed=0;
     private int wins=0;
+    public MyUser(){} //Default constructor
 
-    public User(){} //Default constructor
+    public MyUser(String id){
+        this.id = id;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public MyUser setUsername(String username) {
+        this.username = username;
+        return this;
+    }
 
     public String getPhoneNumber() {
         return phoneNumber;
     }
 
-    public User setPhoneNumber(String phoneNumber) {
+    public MyUser setPhoneNumber(String phoneNumber) {
         this.phoneNumber = phoneNumber;
         return this;
     }

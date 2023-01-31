@@ -32,9 +32,8 @@ public class Activity_Splash extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_splash);
-
         MyUtility.hideSystemUI(this);
+        setContentView(R.layout.activity_splash);
         findViews();
         initViews();
         playSplashAnimationWithDelay();

@@ -2,18 +2,19 @@ package com.example.memoup;
 
 import androidx.activity.result.ActivityResultCallback;
 import androidx.activity.result.ActivityResultLauncher;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.widget.AppCompatImageView;
 
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
+import android.text.InputType;
 import android.widget.EditText;
 
-import com.bumptech.glide.Glide;
 import com.firebase.ui.auth.AuthUI;
 import com.firebase.ui.auth.FirebaseAuthUIActivityResultContract;
+import com.firebase.ui.auth.IdpResponse;
 import com.firebase.ui.auth.data.model.FirebaseAuthUIAuthenticationResult;
-import com.google.android.material.textview.MaterialTextView;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 
@@ -22,19 +23,15 @@ import java.util.List;
 
 public class Activity_Login extends AppCompatActivity {
 
-    private EditText password_TXT_login;
-    private EditText username_TXT_login;
-    private MaterialTextView headline_TXT_login;
-    private AppCompatImageView avatar_IMG_login;
     private FirebaseAuth myAuth;
+    private MyUser myUser;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_login);
         MyUtility.hideSystemUI(this);
-        findViews();
-        initViews();
+        setContentView(R.layout.activity_login);
+
 
         myAuth = FirebaseAuth.getInstance();
         FirebaseUser user = myAuth.getCurrentUser();
@@ -42,12 +39,11 @@ public class Activity_Login extends AppCompatActivity {
         if(user == null){
             prettyLogin();
         }else{
-            // TO DO
-            // add logic for known user
+            myUser = new MyUser(user.getUid());
+            Intent intent = new Intent(this, Activity_MainMenu.class);
+            intent.putExtra("player_1", myUser);
+            startActivity(intent);
         }
-
-        Intent intent = new Intent(this, Activity_GameLevel.class);
-        startActivity(intent);
     }
 
     private void prettyLogin(){
@@ -76,17 +72,41 @@ public class Activity_Login extends AppCompatActivity {
     );
 
     private void onSignInResult(FirebaseAuthUIAuthenticationResult result) {
+        IdpResponse response = result.getIdpResponse();
+        if (result.getResultCode() == RESULT_OK) {
+            FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+            myUser = new MyUser(user.getUid());
+            showUsernameDialog();
+
+        } else {
+            // Sign in failed. If response is null the user canceled the
+            // sign-in flow using the back button. Otherwise check
+            // response.getError().getErrorCode() and handle the error.
+            // ...
+        }
     }
 
-    private void findViews(){
-        password_TXT_login = findViewById(R.id.password_TXT_login);
-        username_TXT_login = findViewById(R.id.username_TXT_login);
-        headline_TXT_login = findViewById(R.id.headline_TXT_login);
-        avatar_IMG_login = findViewById(R.id.avatar_IMG_login);
-    }
+    private void showUsernameDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Enter username");
 
-    private void initViews(){
-        Glide.with(this).load(R.drawable.user_default_avatar).into(avatar_IMG_login);
+        final EditText input = new EditText(this);
+        input.setInputType(InputType.TYPE_CLASS_TEXT);
+        builder.setView(input);
+
+        builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                myUser.setUsername(input.getText().toString());
+                Intent intent = new Intent(Activity_Login.this, Activity_MainMenu.class);
+                intent.putExtra("player_1", myUser);
+                startActivity(intent);
+            }
+        });
+        builder.setNegativeButton("Cancel", null);
+
+        AlertDialog dialog = builder.create();
+        dialog.show();
     }
 
     @Override

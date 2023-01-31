@@ -1,33 +1,19 @@
 package com.example.memoup;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.Intent;
 import android.content.res.Resources;
-import android.graphics.Bitmap;
-import android.graphics.drawable.BitmapDrawable;
-import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.View;
 import android.widget.GridLayout;
-import android.widget.GridView;
 import android.widget.ImageView;
 
 import com.bumptech.glide.Glide;
-import com.bumptech.glide.request.target.CustomTarget;
-import com.bumptech.glide.request.transition.Transition;
-import com.google.android.material.button.MaterialButton;
 import com.google.android.material.imageview.ShapeableImageView;
-import com.google.firebase.storage.FirebaseStorage;
-import com.google.firebase.storage.StorageReference;
-
-import java.util.Random;
-import java.util.concurrent.CountDownLatch;
 
 public class Activity_Game extends AppCompatActivity {
     private GridLayout gameBoard;
@@ -35,15 +21,20 @@ public class Activity_Game extends AppCompatActivity {
     private int boardSize;
     private final int FLIP_CARD_ANIMATION_DURATION = 500;
     private boolean flipInProgress = false;
+    private boolean singlePlayer = true;
     private final int FACE_UP_CARD = 180;
+    private MyUser player_1;
+    private MyUser player_2;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_game);
         MyUtility.hideSystemUI(this);
+        setContentView(R.layout.activity_game);
         Intent previous = getIntent();
         boardSize = previous.getIntExtra("boardSize", boardSize);
+        player_1 = (MyUser) previous.getSerializableExtra("player_1");
+        player_2 = (MyUser) previous.getSerializableExtra("player_2");
         findViews();
         initViews();
     }
@@ -98,6 +89,17 @@ public class Activity_Game extends AppCompatActivity {
                 }
             });
             gameBoard.addView(imageView);
+        }
+    }
+
+    private void initGame(MyUser player_1, MyUser player_2){
+        if(player_1 == null && player_2 == null){
+            throw new NullPointerException("No player defined for the game");
+        }
+        gameManager.setPlayer_1(player_1);
+        if(player_2 != null){
+            gameManager.setPlayer_2(player_2);
+            singlePlayer = false;
         }
     }
 
