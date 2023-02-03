@@ -34,6 +34,8 @@ public class Activity_Splash extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         MyUtility.hideSystemUI(this);
         setContentView(R.layout.activity_splash);
+        Intent serviceIntent = new Intent(this, MyMusicService.class);
+        startService(serviceIntent);
         findViews();
         initViews();
         playSplashAnimationWithDelay();

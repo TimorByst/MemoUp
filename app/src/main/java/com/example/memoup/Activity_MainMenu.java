@@ -23,6 +23,8 @@ public class Activity_MainMenu extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         MyUtility.hideSystemUI(this);
+        Intent serviceIntent = new Intent(this, MyMusicService.class);
+        startService(serviceIntent);
         setContentView(R.layout.activity_main_menu);
         Intent previous = getIntent();
         player_1 = (MyUser) previous.getSerializableExtra("player_1");

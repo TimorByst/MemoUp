@@ -1,9 +1,13 @@
 package com.example.memoup;
 
+import android.content.Context;
+import android.media.MediaPlayer;
+import android.net.Uri;
 import android.util.Log;
 
 import com.google.firebase.storage.FirebaseStorage;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -12,17 +16,29 @@ import java.util.List;
 import java.util.Map;
 
 public class GameManager {
+    /*Default name showed on faced down cards*/
+    private final String APP_NAME = "MemoUp";
     /*The number of images that supported for a game*/
     private final int IMAGE_COUNT = 18;
     /*The size of the game board*/
     private final int boardSize;
+    /*Constant to for board size*/
+    private final int SMALL = 4;
+    /*Constant to for board size*/
+    private final int MEDIUM = 5;
     /*The number of cards that are currently facing up*/
     private int facedUpCards = 0;
     /*The number of matches found so far*/
-    private int matchesFound = 0;
+    private int matchesFound = 1;
+    /*Used to mark the current turn*/
+    private int currentPlayer = 0;
+    /*Used to mark the player 1 game score*/
+    private int playerOneScore = 0;
+    /*Used to mark the player 2 game score*/
+    private int playerTwoScore = 0;
     /*Used to indicate if a card is faced up or down (true - up, false - down)*/
     private boolean[][] cardFacedUp;
-    /*Used to hold the current faced up cardes indexes*/
+    /*Used to hold the current faced up cards indexes*/
     private ArrayList<int[]> currentFacedUpCards = new ArrayList<int[]>() {
         {
             add(new int[2]);
@@ -33,16 +49,15 @@ public class GameManager {
     private String comparisonCard;
     /*Used to hold the image location on board*/
     private String[][] cardImages;
-    /*Default name showed on faced down cards*/
-    private final String APP_NAME = "MemoUp";
     /*Used to map image name to its R.drawable.image*/
     private final Map<String, Integer> images = new HashMap<>();
+    private final Map<String, Integer> sounds = new HashMap<>();
     private FirebaseStorage firebaseStorage;
     private List<String> imageList;
-    private final int SMALL = 4;
-    private final int MEDIUM = 5;
     private MyUser player_1;
     private MyUser player_2;
+    private MediaPlayer mediaPlayer;
+    private Context context;
 
     public MyUser getPlayer_1() {
         return player_1;
@@ -67,10 +82,12 @@ public class GameManager {
      *
      * @param boardSize the size of the board
      */
-    public GameManager(int boardSize) {
+    public GameManager(int boardSize, Context context) {
         this.boardSize = boardSize;
+        this.context = context;
         firebaseStorage = FirebaseStorage.getInstance();
         initBoard();
+        initGameSounds();
         initImageMap();
         randomizeImageLocations();
     }
@@ -130,6 +147,15 @@ public class GameManager {
         images.put("Jester", R.drawable.jester);
     }
 
+    private void initGameSounds(){
+        mediaPlayer = new MediaPlayer();
+        sounds.put("game_start", R.raw.game_start);
+        sounds.put("game_end", R.raw.game_end);
+        sounds.put("match_found", R.raw.match_found);
+        sounds.put("one_card_flip", R.raw.one_card_flip);
+        sounds.put("two_card_flip", R.raw.two_card_flip);
+    }
+
     /**
      * This function randomizes the image indexes in order
      * to randomize the image location on the board
@@ -169,7 +195,7 @@ public class GameManager {
         try {
             Collections.shuffle(imageList);
         } catch (UnsupportedOperationException e) {
-            Log.d("my_tag", "Error while trying to shuffle the images: " + e);
+            Log.d("MemoUp", "Error while trying to shuffle the images: " + e);
         }
 
         cardImages = new String[boardSize][boardSize];
@@ -192,7 +218,6 @@ public class GameManager {
         if (cardFacedUp[row][col]) {
             currentFacedUpCards.set(facedUpCards, new int[]{row, col});
             facedUpCards++;
-            Log.d("TIMOR", "number of flipped cards in GameManager" + getFacedUpCards());
         } else {
             facedUpCards--;
         }
@@ -210,7 +235,15 @@ public class GameManager {
     public boolean checkMatch(int imageRow, int imageCol) {
         if (comparisonCard.equalsIgnoreCase(cardImages[imageRow][imageCol])) {
             matchesFound++;
+            if(currentPlayer == 0){
+                playerOneScore++;
+            }else{
+                playerTwoScore++;
+            }
             return true;
+        }
+        if(player_2 != null){
+            currentPlayer = ~currentPlayer;
         }
         return false;
     }
@@ -267,6 +300,21 @@ public class GameManager {
         return matchesFound == (boardSize % 2 == 0 ? boardSize : boardSize - 1) * boardSize / 2;
     }
 
+    public void playGameSound(String soundResourceName){
+        mediaPlayer.reset();
+        try {
+            mediaPlayer.setDataSource(context,
+                    Uri.parse("android.resource://"
+                            + context.getPackageName()
+                            + "/"
+                            + sounds.get(soundResourceName)));
+            mediaPlayer.prepare();
+            mediaPlayer.start();
+        }catch (IOException e){
+            Log.d("MemoUp", "GameManager: MediaPlayer error: " + e.getMessage());
+        }
+    }
+
     public int getBoardSize() {
         return boardSize;
     }
@@ -293,5 +341,33 @@ public class GameManager {
 
     public ArrayList<int[]> getFlippedCards() {
         return currentFacedUpCards;
+    }
+
+    public int getPlayerOneScore() {
+        return playerOneScore;
+    }
+
+    public void setPlayerOneScore(int playerOneScore) {
+        this.playerOneScore = playerOneScore;
+    }
+
+    public int getPlayerTwoScore() {
+        return playerTwoScore;
+    }
+
+    public void setPlayerTwoScore(int playerTwoScore) {
+        this.playerTwoScore = playerTwoScore;
+    }
+
+    public int getCurrentPlayer() {
+        return currentPlayer;
+    }
+
+    public void setCurrentPlayer(int currentPlayer) {
+        this.currentPlayer = currentPlayer;
+    }
+
+    public void destroy(){
+        mediaPlayer.release();
     }
 }
