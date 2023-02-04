@@ -57,6 +57,7 @@ public class Activity_Game extends AppCompatActivity {
     private CallbackTimer callbackTimer;
     private MyUser player_1;
     private MyUser player_2;
+    private FirebaseManager firebaseManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -67,7 +68,6 @@ public class Activity_Game extends AppCompatActivity {
         boardSize = previous.getIntExtra("boardSize", boardSize);
         player_1 = (MyUser) previous.getSerializableExtra("player_1");
         player_2 = (MyUser) previous.getSerializableExtra("player_2");
-        player_1 = new MyUser("1").setUsername("TEST");
         findViews();
         initViews();
         initGame(player_1, player_2);
@@ -175,6 +175,7 @@ public class Activity_Game extends AppCompatActivity {
      * </ol>
      */
     private void initViews() {
+        firebaseManager = FirebaseManager.getInstance();
         gameManager = new GameManager(boardSize, this);
         gameBoard.setRowCount(boardSize);
         gameBoard.setColumnCount(boardSize);
@@ -251,12 +252,24 @@ public class Activity_Game extends AppCompatActivity {
                 myTicker.stop();
             }
             if(secondCard) {
-                playEndGameAnimation();
+                endGame();
 
             }else{
                 secondCard = true;
             }
         }
+    }
+
+    private void endGame() {
+        player_1.gameOver(false,
+                gameManager.getPlayerOneScore() > gameManager.getPlayerTwoScore());
+        firebaseManager.saveUser(player_1);
+        if(player_2 != null){
+            player_2.gameOver(false,
+                    gameManager.getPlayerOneScore() > gameManager.getPlayerTwoScore());
+            firebaseManager.saveUser(player_2);
+        }
+        playEndGameAnimation();
     }
 
     private void loadImageResource(int imageResource, ImageView imageView) {
@@ -330,7 +343,6 @@ public class Activity_Game extends AppCompatActivity {
                                         }
                                     }
                                     cardView.setVisibility(View.INVISIBLE);
-                                    MySignal.getInstance().vibrate();
                                     MySignal.getInstance()
                                             .frenchToast(Math.random() < 0.5 ? "Nice!" : "Good Job!");
                                 } else {

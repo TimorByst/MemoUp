@@ -34,6 +34,20 @@ public class Activity_MainMenu extends AppCompatActivity {
         initButton(online_BTN_mainMenu);
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+        Intent serviceIntent = new Intent(this, MyMusicService.class);
+        startService(serviceIntent);
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        Intent serviceIntent = new Intent(this, MyMusicService.class);
+        stopService(serviceIntent);
+    }
+
     private void findViews() {
         creator_TXT = findViewById(R.id.creator_TXT);
         headline_TXT_level = findViewById(R.id.headline_TXT_level);

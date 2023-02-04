@@ -4,16 +4,16 @@ import java.io.Serializable;
 
 public class MyUser implements Serializable {
 
-    private String phoneNumber;
-
     private String username;
-
     private String id;
-    private int gamesPlayed=0;
-    private int wins=0;
-    public MyUser(){} //Default constructor
+    private int gamesPlayedSolo = 0;
+    private int gamesPlayedMulti = 0;
+    private int wins = 0;
 
-    public MyUser(String id){
+    public MyUser() {
+    } //Default constructor
+
+    public MyUser(String id) {
         this.id = id;
     }
 
@@ -26,32 +26,46 @@ public class MyUser implements Serializable {
         return this;
     }
 
-    public String getPhoneNumber() {
-        return phoneNumber;
-    }
-
-    public MyUser setPhoneNumber(String phoneNumber) {
-        this.phoneNumber = phoneNumber;
-        return this;
-    }
-
     public String getId() {
         return id;
     }
 
-    public int getGamesPlayed() {
-        return gamesPlayed;
+    public int getGamesPlayedSolo() {
+        return gamesPlayedSolo;
+    }
+
+    public MyUser setGamesPlayedSolo(int gamesPlayedSolo) {
+        this.gamesPlayedSolo = gamesPlayedSolo;
+        return this;
+    }
+
+    public int getGamesPlayedMulti() {
+        return gamesPlayedMulti;
+    }
+
+    public MyUser setGamesPlayedMulti(int gamesPlayedMulti) {
+        this.gamesPlayedMulti = gamesPlayedMulti;
+        return this;
     }
 
     public int getWins() {
         return wins;
     }
 
-    private void gameOver(boolean won){
-        if(won) {
-            wins++;
+    public MyUser setWins(int wins) {
+        this.wins = wins;
+        return this;
+    }
+
+    public void gameOver(boolean singlePlayer, boolean won) {
+        if (singlePlayer) {
+            gamesPlayedSolo++;
+        } else {
+            if (won) {
+                wins++;
+            }
+            gamesPlayedMulti++;
         }
-        gamesPlayed++;
     }
 
 }

@@ -58,8 +58,20 @@ public class Activity_Splash extends AppCompatActivity {
         slide_left_to_right = AnimationUtils.loadAnimation(
                 this, R.anim.slide_in_left_to_right);
         fade_in = AnimationUtils.loadAnimation(this, R.anim.fade_in);
+    }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+        Intent serviceIntent = new Intent(this, MyMusicService.class);
+        startService(serviceIntent);
+    }
 
+    @Override
+    protected void onPause() {
+        super.onPause();
+        Intent serviceIntent = new Intent(this, MyMusicService.class);
+        stopService(serviceIntent);
     }
 
     private void playSplashAnimationWithDelay() {

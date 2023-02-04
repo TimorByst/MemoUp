@@ -24,14 +24,6 @@
             android:exported="false" />
 
         <activity
-            android:name=".Activity_Game_2"
-            android:exported="true">
-
-            <meta-data
-                android:name="android.app.lib_name"
-                android:value="" />
-        </activity>
-        <activity
             android:name=".Activity_Game"
             android:exported="true">
             <meta-data
@@ -41,11 +33,11 @@
         <activity
             android:name=".Activity_GameLevel"
             android:exported="true">
-            <intent-filter>
+<!--            <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
+            </intent-filter>-->
 
             <meta-data
                 android:name="android.app.lib_name"
@@ -71,12 +63,12 @@
             android:exported="true"
             android:screenOrientation="portrait">
 
-<!--            <intent-filter>
+            <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
 
                 <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>-->
+            </intent-filter>
             <meta-data
                 android:name="android.app.lib_name"
                 android:value="" />

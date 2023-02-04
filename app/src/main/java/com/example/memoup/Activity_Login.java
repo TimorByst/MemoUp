@@ -9,6 +9,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 import android.text.InputType;
+import android.util.Log;
 import android.widget.EditText;
 
 import com.firebase.ui.auth.AuthUI;
@@ -23,7 +24,7 @@ import java.util.List;
 
 public class Activity_Login extends AppCompatActivity {
 
-    private FirebaseAuth myAuth;
+    private FirebaseManager firebaseManager;
     private MyUser myUser;
 
     @Override
@@ -31,22 +32,52 @@ public class Activity_Login extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         MyUtility.hideSystemUI(this);
         setContentView(R.layout.activity_login);
+        firebaseManager = FirebaseManager.getInstance();
 
+        FirebaseUser user = firebaseManager.getFirebaseAuth().getCurrentUser();
 
-        myAuth = FirebaseAuth.getInstance();
-        FirebaseUser user = myAuth.getCurrentUser();
-
-        if(user == null){
+        if (user == null) {
             prettyLogin();
-        }else{
-            myUser = new MyUser(user.getUid());
+        } else {
+            firebaseManager.loadUser(user.getUid(),
+                    new FirebaseManager.OnUserLoadedListener() {
+                        @Override
+                        public void onUserLoaded(MyUser user) {
+                            int x = 5 + 5;
+                            myUser = user;
+                            Log.d("TIMOR",
+                                    "user: " + myUser.getUsername());
+                        }
+
+                        @Override
+                        public void onError(String errorMessage) {
+                            Log.e("TIMOR",
+                                    "Error while trying to read user from the database");
+                        }
+                    }
+            );
+
             Intent intent = new Intent(this, Activity_MainMenu.class);
             intent.putExtra("player_1", myUser);
             startActivity(intent);
         }
     }
 
-    private void prettyLogin(){
+    @Override
+    protected void onResume() {
+        super.onResume();
+        Intent serviceIntent = new Intent(this, MyMusicService.class);
+        startService(serviceIntent);
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        Intent serviceIntent = new Intent(this, MyMusicService.class);
+        stopService(serviceIntent);
+    }
+
+    private void prettyLogin() {
         List<AuthUI.IdpConfig> providers = Arrays.asList(
                 new AuthUI.IdpConfig.EmailBuilder().build(),
                 new AuthUI.IdpConfig.PhoneBuilder().build(),
@@ -78,11 +109,9 @@ public class Activity_Login extends AppCompatActivity {
             myUser = new MyUser(user.getUid());
             showUsernameDialog();
 
+
         } else {
-            // Sign in failed. If response is null the user canceled the
-            // sign-in flow using the back button. Otherwise check
-            // response.getError().getErrorCode() and handle the error.
-            // ...
+            prettyLogin();
         }
     }
 
@@ -98,6 +127,7 @@ public class Activity_Login extends AppCompatActivity {
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 myUser.setUsername(input.getText().toString());
+                firebaseManager.saveUser(myUser);
                 Intent intent = new Intent(Activity_Login.this, Activity_MainMenu.class);
                 intent.putExtra("player_1", myUser);
                 startActivity(intent);

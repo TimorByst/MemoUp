@@ -206,6 +206,10 @@ public class GameManager {
         }
     }
 
+    private void startGame(){
+
+    }
+
     /**
      * This function changes the card state
      * and changes the number of cards that are flipped up accordingly
@@ -315,12 +319,14 @@ public class GameManager {
         }
     }
 
-    public int getBoardSize() {
-        return boardSize;
-    }
+
 
     public boolean isCardFacedUp(int row, int col) {
         return cardFacedUp[row][col];
+    }
+
+    public int getBoardSize() {
+        return boardSize;
     }
 
     public String getImageName(int row, int col) {

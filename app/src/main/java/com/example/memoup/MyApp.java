@@ -9,5 +9,6 @@ public class MyApp extends Application {
         super.onCreate();
 
         MySignal.init(this);
+        FirebaseManager.init();
     }
 }
