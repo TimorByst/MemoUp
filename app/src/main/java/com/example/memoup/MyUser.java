@@ -4,16 +4,20 @@ import java.io.Serializable;
 
 public class MyUser implements Serializable {
 
-    private String username;
     private String id;
+    private String username;
+    private String sessionKey;
+    private int wins = 0;
     private int gamesPlayedSolo = 0;
     private int gamesPlayedMulti = 0;
-    private int wins = 0;
 
     public MyUser() {
     } //Default constructor
 
     public MyUser(String id) {
+        if(id == null){
+            return;
+        }
         this.id = id;
     }
 
@@ -55,6 +59,14 @@ public class MyUser implements Serializable {
     public MyUser setWins(int wins) {
         this.wins = wins;
         return this;
+    }
+
+    public String getSessionKey() {
+        return sessionKey;
+    }
+
+    public void setSessionKey(String sessionKey) {
+        this.sessionKey = sessionKey;
     }
 
     public void gameOver(boolean singlePlayer, boolean won) {

@@ -1,8 +1,5 @@
 package com.example.memoup;
 
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.widget.AppCompatTextView;
-
 import android.content.Intent;
 import android.content.res.Resources;
 import android.os.Bundle;
@@ -15,16 +12,15 @@ import android.view.animation.AnimationUtils;
 import android.widget.GridLayout;
 import android.widget.ImageView;
 
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.AppCompatTextView;
+
 import com.bumptech.glide.Glide;
 import com.google.android.material.imageview.ShapeableImageView;
 
+import java.util.UUID;
+
 public class Activity_Game extends AppCompatActivity {
-
-    public interface CallbackTimer {
-
-        void tick();
-
-    }
 
     private final int FACE_UP_CARD = 180;
     private final int FLIP_CARD_ANIMATION_DURATION = 500;
@@ -34,9 +30,9 @@ public class Activity_Game extends AppCompatActivity {
     private final String MATCH_FOUND = "match_found";
     private final String ONE_CARD_FLIP = "one_card_flip";
     private final String TWO_CARD_FLIP = "two_card_flip";
+    private final boolean VISIBLE = true;
     private int boardSize;
     private float timePassed = 0;
-    private final boolean VISIBLE = true;
     private boolean firstStart = true;
     private boolean playSoundOnce = true;
     private boolean secondCard = false;
@@ -55,7 +51,7 @@ public class Activity_Game extends AppCompatActivity {
     private ShapeableImageView game_over_IMG;
     private MyTicker myTicker;
     private GridLayout gameBoard;
-    private GameManager gameManager;
+    private GameManager gameManager = new GameManager();
     private CallbackTimer callbackTimer;
     private MyUser player_1;
     private MyUser player_2;
@@ -67,15 +63,17 @@ public class Activity_Game extends AppCompatActivity {
         MyUtility.hideSystemUI(this);
         setContentView(R.layout.activity_game);
         Intent previous = getIntent();
-        boardSize = previous.getIntExtra("boardSize", boardSize);
-        player_1 = (MyUser) previous.getSerializableExtra("player_1");
-        player_2 = (MyUser) previous.getSerializableExtra("player_2");
+        boardSize = previous.getIntExtra(MyUtility.BOARD_SIZE, boardSize);
+        player_1 = (MyUser) previous.getSerializableExtra(MyUtility.PLAYER_1);
+        singlePlayer = previous.getBooleanExtra(MyUtility.SINGLE_PLAYER, singlePlayer);
         findViews();
         initViews();
-        initGame(player_1, player_2);
+        initGame(player_1);
         if (singlePlayer) {
             myTicker = new MyTicker(callbackTimer);
             runTimer();
+        } else {
+
         }
         Intent serviceIntent = new Intent(this, MyMusicService.class);
         stopService(serviceIntent);
@@ -183,7 +181,10 @@ public class Activity_Game extends AppCompatActivity {
      */
     private void initViews() {
         firebaseManager = FirebaseManager.getInstance();
-        gameManager = new GameManager(boardSize, this);
+        if (singlePlayer) {
+            player_1.setSessionKey("SingleGame-" + UUID.randomUUID().toString());
+        }
+        gameManager = gameManager.init(boardSize, player_1);
         gameBoard.setRowCount(boardSize);
         gameBoard.setColumnCount(boardSize);
         for (int i = 0; i < boardSize * boardSize; i++) {
@@ -216,17 +217,13 @@ public class Activity_Game extends AppCompatActivity {
         return (int) (dp * Resources.getSystem().getDisplayMetrics().density);
     }
 
-    private void initGame(MyUser player_1, MyUser player_2) {
-        if (player_1 == null && player_2 == null) {
+    private void initGame(MyUser player_1) {
+        if (player_1 == null) {
             throw new NullPointerException("No player defined for the game");
         }
-        gameManager.setPlayer_1(player_1);
         single_player_time.setText("00:00");
         single_player_score.setText("0");
-        if (player_2 != null) {
-            gameManager.setPlayer_2(player_2);
-            singlePlayer = false;
-
+        if (!singlePlayer) {
             player_one_TXT_name.setVisibility(View.VISIBLE);
             player_one_win_rate.setVisibility(View.VISIBLE);
             player_one_score.setVisibility(View.VISIBLE);
@@ -239,7 +236,7 @@ public class Activity_Game extends AppCompatActivity {
             single_player_time.setVisibility(View.INVISIBLE);
             single_player_score.setVisibility(View.INVISIBLE);
         }
-        gameManager.playGameSound(GAME_START);
+        gameManager.playGameSound(GAME_START, this);
     }
 
     private void clicked(View view, int finalI, int finalJ) {
@@ -250,23 +247,16 @@ public class Activity_Game extends AppCompatActivity {
             flipInProgress = true;
             flipCard(view, finalI, finalJ);
         }
-        if (singlePlayer) {
-
-        } else {
-
-        }
         if (gameManager.isGameOver()) {
             if (myTicker.isRunning()) {
                 myTicker.stop();
             }
             if (secondCard) {
                 endGame();
-
             } else {
                 secondCard = true;
             }
         }
-        gameManager.saveGameState();
     }
 
     private void endGame() {
@@ -294,7 +284,7 @@ public class Activity_Game extends AppCompatActivity {
      */
     private void flipCard(View view, int row, int col) {
         ShapeableImageView imageView = (ShapeableImageView) view;
-        gameManager.playGameSound(ONE_CARD_FLIP);
+        gameManager.playGameSound(ONE_CARD_FLIP, this);
         gameBoard.setEnabled(false);
         view
                 .animate()
@@ -339,8 +329,9 @@ public class Activity_Game extends AppCompatActivity {
                             public void run() {
                                 gameManager.flipCard(row, col);
                                 if (matchFound) {
-                                    if(playSoundOnce) {
-                                        gameManager.playGameSound(MATCH_FOUND);
+                                    if (playSoundOnce) {
+                                        gameManager.playGameSound(MATCH_FOUND,
+                                                Activity_Game.this);
                                         playSoundOnce = false;
                                     }
                                     if (singlePlayer) {
@@ -359,9 +350,11 @@ public class Activity_Game extends AppCompatActivity {
                                     gameManager.setCardInVisibility(row, col, !VISIBLE);
                                     MySignal.getInstance()
                                             .frenchToast(Math.random() < 0.5 ? "Nice!" : "Good Job!");
+                                    gameManager.saveGameState();
                                 } else {
-                                    if(playSoundOnce) {
-                                        gameManager.playGameSound(TWO_CARD_FLIP);
+                                    if (playSoundOnce) {
+                                        gameManager.playGameSound(TWO_CARD_FLIP,
+                                                Activity_Game.this);
                                         playSoundOnce = false;
                                     }
                                     imageView.setImageResource(gameManager.getDefaultImageReference());
@@ -369,7 +362,7 @@ public class Activity_Game extends AppCompatActivity {
                             }
                         });
             } catch (NullPointerException e) {
-                Log.e("MemoUp", "Null card at location: ["
+                Log.e(MyUtility.LOG_TAG, "Null card at location: ["
                         + (position == 0 ? 0 : position / gameManager.getBoardSize())
                         + ", "
                         + position % gameManager.getBoardSize() + "]");
@@ -382,7 +375,7 @@ public class Activity_Game extends AppCompatActivity {
         fade_in.setAnimationListener(new Animation.AnimationListener() {
             @Override
             public void onAnimationStart(Animation animation) {
-                gameManager.playGameSound(GAME_END);
+                gameManager.playGameSound(GAME_END, Activity_Game.this);
             }
 
             @Override
@@ -410,5 +403,9 @@ public class Activity_Game extends AppCompatActivity {
         if (hasFocus) {
             MyUtility.hideSystemUI(this);
         }
+    }
+
+    public interface CallbackTimer {
+        void tick();
     }
 }

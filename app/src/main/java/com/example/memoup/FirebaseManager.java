@@ -32,8 +32,6 @@ public class FirebaseManager {
     private DatabaseReference databaseReference;
     private FirebaseAuth firebaseAuth;
     private Gson gson = new Gson();
-    private final String USERS = "Users";
-    private static final String GAMES = "Games" ;
 
     public static void init() {
         if (firebaseManager == null) {
@@ -64,12 +62,12 @@ public class FirebaseManager {
 
     public void saveUser(MyUser user) {
         String json = gson.toJson(user);
-        databaseReference = firebaseDatabase.getReference(USERS);
+        databaseReference = firebaseDatabase.getReference(MyUtility.USERS);
         databaseReference.child(user.getId()).setValue(json);
     }
 
     public void loadUser(String userId, final OnUserLoadedListener listener) {
-        databaseReference = firebaseDatabase.getReference(USERS);
+        databaseReference = firebaseDatabase.getReference(MyUtility.USERS);
         databaseReference.child(userId).addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {

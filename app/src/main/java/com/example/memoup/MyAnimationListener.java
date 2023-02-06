@@ -8,10 +8,10 @@ import android.view.animation.Animation;
 
 class MyAnimationListener implements Animation.AnimationListener {
 
-    private Animation nextAnimation;
-    private View nextView;
-    private Intent intent;
-    private Activity activity;
+    private final Animation nextAnimation;
+    private final View nextView;
+    private final Intent intent;
+    private final Activity activity;
 
     public MyAnimationListener(Animation nextAnimation, View nextView, Intent intent, Activity activity) {
         this.nextAnimation = nextAnimation;

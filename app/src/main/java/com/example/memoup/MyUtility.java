@@ -7,6 +7,15 @@ import android.view.WindowManager;
 
 public class MyUtility {
 
+    public static final String PLAYER_1 = "PLAYER_1";
+    public static final String PLAYER_2 = "PLAYER_2";
+    public static final String LOG_TAG = "MEMO_UP";
+    public static final String GAME_SESSIONS = "GAME_SESSIONS";
+    public static final String USERS = "USERS";
+    public static final String QUEUE = "QUEUE";
+    public static final String SINGLE_PLAYER = "SINGLE_PLAYER";
+    public static final String BOARD_SIZE = "BOARD_SIZE";
+
     public static void hideSystemUI(Activity activity) {
         // Enables regular immersive mode.
         // For "lean back" mode, remove SYSTEM_UI_FLAG_IMMERSIVE.

@@ -18,6 +18,7 @@ public class Activity_GameLevel extends AppCompatActivity {
     private MaterialTextView headline_TXT_level;
     private MyUser player_1;
     private MyUser player_2;
+    private boolean singlePlayer;
 
 
     @Override
@@ -26,7 +27,8 @@ public class Activity_GameLevel extends AppCompatActivity {
         MyUtility.hideSystemUI(this);
         setContentView(R.layout.activity_game_level);
         Intent previous = getIntent();
-        player_1 = (MyUser) previous.getSerializableExtra("player_1");
+        player_1 = (MyUser) previous.getSerializableExtra(MyUtility.PLAYER_1);
+        singlePlayer = previous.getBooleanExtra(MyUtility.SINGLE_PLAYER, singlePlayer);
         findViews();
         initButton(boardSize_BTN_4);
         initButton(boardSize_BTN_5);
@@ -73,6 +75,7 @@ public class Activity_GameLevel extends AppCompatActivity {
 
     private void clicked(int buttonId) {
         int boardSize;
+        Intent intent;
         if (buttonId == boardSize_BTN_4.getId()) {
             boardSize = 4;
         } else if (buttonId == boardSize_BTN_5.getId()) {
@@ -80,9 +83,13 @@ public class Activity_GameLevel extends AppCompatActivity {
         } else {
             boardSize = 6;
         }
-        Intent intent = new Intent(this, Activity_Game.class);
-        intent.putExtra("player_1", player_1);
-        intent.putExtra("boardSize", boardSize);
+        if(singlePlayer){
+            intent = new Intent(this, Activity_Game.class);
+        }else{
+            intent = new Intent(this, Activity_Online.class);
+        }
+        intent.putExtra(MyUtility.PLAYER_1, player_1);
+        intent.putExtra(MyUtility.BOARD_SIZE, boardSize);
         startActivity(intent);
     }
 

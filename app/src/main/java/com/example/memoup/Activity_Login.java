@@ -35,7 +35,6 @@ public class Activity_Login extends AppCompatActivity {
         firebaseManager = FirebaseManager.getInstance();
 
         FirebaseUser user = firebaseManager.getFirebaseAuth().getCurrentUser();
-
         if (user == null) {
             prettyLogin();
         } else {
@@ -48,19 +47,22 @@ public class Activity_Login extends AppCompatActivity {
                                     .setGamesPlayedMulti(user.getGamesPlayedMulti())
                                     .setGamesPlayedSolo(user.getGamesPlayedSolo())
                                     .setWins(user.getWins());
+                            Log.d(MyUtility.LOG_TAG, myUser.getUsername() + " is now online");
+                            Intent intent = new Intent(Activity_Login.this,
+                                    Activity_MainMenu.class);
+                            intent.putExtra(MyUtility.PLAYER_1, myUser);
+                            startActivity(intent);
+                            Log.d(MyUtility.LOG_TAG, "User loaded successfully");
                         }
+
 
                         @Override
                         public void onError(String errorMessage) {
-                            Log.e("TIMOR",
+                            Log.e(MyUtility.LOG_TAG,
                                     "Error while trying to read user from the database");
                         }
                     }
             );
-
-            Intent intent = new Intent(this, Activity_MainMenu.class);
-            intent.putExtra("player_1", myUser);
-            startActivity(intent);
         }
     }
 
@@ -136,7 +138,7 @@ public class Activity_Login extends AppCompatActivity {
                 myUser.setUsername(input.getText().toString());
                 firebaseManager.saveUser(myUser);
                 Intent intent = new Intent(Activity_Login.this, Activity_MainMenu.class);
-                intent.putExtra("player_1", myUser);
+                intent.putExtra(MyUtility.PLAYER_1, myUser);
                 startActivity(intent);
             }
         });

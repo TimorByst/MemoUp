@@ -4,6 +4,7 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 
 import com.google.android.material.button.MaterialButton;
@@ -17,7 +18,6 @@ public class Activity_MainMenu extends AppCompatActivity {
     private MaterialTextView creator_TXT;
     private MaterialTextView headline_TXT_level;
     private MyUser player_1;
-    private MyUser player_2;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -27,7 +27,8 @@ public class Activity_MainMenu extends AppCompatActivity {
         startService(serviceIntent);
         setContentView(R.layout.activity_main_menu);
         Intent previous = getIntent();
-        player_1 = (MyUser) previous.getSerializableExtra("player_1");
+        player_1 = (MyUser) previous.getSerializableExtra(MyUtility.PLAYER_1);
+        Log.d(MyUtility.LOG_TAG, player_1.getUsername() + " Is online");
         findViews();
         initButton(profile_BTN_mainMenu);
         initButton(solo_BTN_mainMenu);
@@ -63,7 +64,6 @@ public class Activity_MainMenu extends AppCompatActivity {
                 clicked(button.getId());
             }
         });
-
     }
 
     private void clicked(int buttonId) {
@@ -75,9 +75,11 @@ public class Activity_MainMenu extends AppCompatActivity {
         }
         if (buttonId == online_BTN_mainMenu.getId()) {
             solo = false;
+
         }
         Intent intent = new Intent(this, Activity_GameLevel.class);
-            intent.putExtra("player_1", player_1);
+            intent.putExtra(MyUtility.PLAYER_1, player_1);
+            intent.putExtra(MyUtility.SINGLE_PLAYER, solo);
             startActivity(intent);
     }
 

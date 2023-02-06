@@ -16,7 +16,6 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.GenericTypeIndicator;
 import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.storage.FirebaseStorage;
-import com.google.gson.Gson;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -25,7 +24,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 public class GameManager {
     /*Default name showed on faced down cards*/
@@ -73,6 +71,8 @@ public class GameManager {
     private String gameId;
     /*Used to hold the image location on board*/
     private String[][] cardImageNames;
+    /*Used to follow all gameManager instances*/
+    private static Map<String, GameManager> gameSessions = new HashMap<>();
     /*Used to map image name to its R.drawable.image*/
     private final Map<String, Integer> images = new HashMap<>();
     /*Used to map sound resources to their names*/
@@ -83,41 +83,59 @@ public class GameManager {
     private MyUser player_1;
     private MyUser player_2;
     private MediaPlayer mediaPlayer;
-    private Context context;
+    private GameManager gameManager;
 
     public MyUser getPlayer_1() {
         return player_1;
     }
 
-    public GameManager setPlayer_1(MyUser player_1) {
+    private void setPlayer_1(MyUser player_1) {
         this.player_1 = player_1;
-        return this;
     }
 
     public MyUser getPlayer_2() {
         return player_2;
     }
 
-    public GameManager setPlayer_2(MyUser player_2) {
+    private void setPlayer_2(MyUser player_2) {
         this.player_2 = player_2;
-        return this;
     }
 
-    public GameManager(){}// Default Constructor
+    private void addPlayer(MyUser player) {
+        if (player_1 == null) {
+            setPlayer_1(player);
+        } else {
+            if (!player.getId().equalsIgnoreCase(player_1.getId())) {
+                setPlayer_2(player);
+            }
+        }
+    }
+
+    public GameManager() {
+    }// Default Constructor
+
+    public GameManager init(int boardSize, MyUser player) {
+        gameManager = gameSessions.get(player.getSessionKey());
+        if (gameManager == null) {
+            gameManager = new GameManager(boardSize, player);
+            gameSessions.put(player.getSessionKey(), gameManager);
+        }
+        addPlayer(player);
+        return gameManager;
+    }
 
     /**
      * GameManager constructor, receives the board size and initializes game
      *
      * @param boardSize the size of the board
      */
-    public GameManager(int boardSize, Context context) {
-        this.gameId = UUID.randomUUID().toString();
+    private GameManager(int boardSize, MyUser player) {
+        gameId = player.getSessionKey();
         this.boardSize = boardSize;
-        this.context = context;
         firebaseDatabase = FirebaseDatabase.getInstance();
         /*The node name references in the firebase database*/
         databaseReference = firebaseDatabase.getReference("Games");
-        setValueEventListener();
+        setValueEventListener(gameId);
         initBoard();
         initGameSounds();
         initImageMap();
@@ -244,12 +262,13 @@ public class GameManager {
                 });
     }
 
-    private void setValueEventListener() {
-        databaseReference.child(gameId).addValueEventListener(new ValueEventListener() {
+    private void setValueEventListener(String gameSessionId) {
+        databaseReference.child(gameSessionId).addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 if (dataSnapshot.exists()) {
-                    GenericTypeIndicator<Map<String, Object>> typeIndicator = new GenericTypeIndicator<Map<String, Object>>() {};
+                    GenericTypeIndicator<Map<String, Object>> typeIndicator = new GenericTypeIndicator<Map<String, Object>>() {
+                    };
                     Map<String, Object> gameState = dataSnapshot.getValue(typeIndicator);
                     toObject(gameState);
                     /**
@@ -281,7 +300,7 @@ public class GameManager {
         gameState.put("playerOneScore", playerOneScore);
         gameState.put("currentPlayerTurn", currentPlayerTurn);
         gameState.put("matchesFound", matchesFound);
-        gameState.put("player_1", player_1.getId());
+        //gameState.put("player_1", player_1.getId());
         //gameState.put("player_2", player_2.getId() == null ? 0 : player_2.getId());
 
         return gameState;
@@ -438,7 +457,7 @@ public class GameManager {
         return matchesFound == (boardSize % 2 == 0 ? boardSize : boardSize - 1) * boardSize / 2;
     }
 
-    public void playGameSound(String soundResourceName) {
+    public void playGameSound(String soundResourceName, Context context) {
         mediaPlayer.reset();
         try {
             mediaPlayer.setDataSource(context,
@@ -501,7 +520,9 @@ public class GameManager {
         this.currentPlayerTurn = currentPlayer;
     }
 
-    public void destroy() {
+    public void destroy(String sessionKey) {
         mediaPlayer.release();
+        databaseReference.child(gameId).removeValue();
+        gameSessions.remove(sessionKey);
     }
 }
