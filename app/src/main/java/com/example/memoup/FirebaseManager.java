@@ -10,12 +10,20 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.google.gson.Gson;
 
+import java.util.Map;
+
 
 public class FirebaseManager {
 
     interface OnUserLoadedListener {
-        void onUserLoaded(MyUser user);
 
+        void onUserLoaded(MyUser user);
+        void onError(String errorMessage);
+
+    }
+
+    interface onGameStateLoadedListener{
+        void onGameStateLoaded(Map<String, Object> gameState);
         void onError(String errorMessage);
     }
 
@@ -25,6 +33,7 @@ public class FirebaseManager {
     private FirebaseAuth firebaseAuth;
     private Gson gson = new Gson();
     private final String USERS = "Users";
+    private static final String GAMES = "Games" ;
 
     public static void init() {
         if (firebaseManager == null) {
@@ -79,10 +88,4 @@ public class FirebaseManager {
             }
         });
     }
-
-    public void saveGame() {
-
-    }
-
-
 }

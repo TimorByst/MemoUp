@@ -36,7 +36,9 @@ public class Activity_Game extends AppCompatActivity {
     private final String TWO_CARD_FLIP = "two_card_flip";
     private int boardSize;
     private float timePassed = 0;
+    private final boolean VISIBLE = true;
     private boolean firstStart = true;
+    private boolean playSoundOnce = true;
     private boolean secondCard = false;
     private boolean singlePlayer = true;
     private boolean flipInProgress = false;
@@ -75,7 +77,6 @@ public class Activity_Game extends AppCompatActivity {
             myTicker = new MyTicker(callbackTimer);
             runTimer();
         }
-
         Intent serviceIntent = new Intent(this, MyMusicService.class);
         stopService(serviceIntent);
     }
@@ -103,6 +104,12 @@ public class Activity_Game extends AppCompatActivity {
         }
     }
 
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        finish();
+    }
+
     private void runTimer() {
         callbackTimer = new CallbackTimer() {
             @Override
@@ -127,15 +134,15 @@ public class Activity_Game extends AppCompatActivity {
         String[] currentTime = single_player_time.getText().toString().split(":", 2);
         int seconds = Integer.parseInt(currentTime[1]) + 1;
         int minutes = Integer.parseInt(currentTime[0]);
-        if(seconds >= 60){
+        if (seconds >= 60) {
             seconds = seconds % 60;
             minutes++;
         }
         single_player_time.setText(
-                        (minutes < 10 ? ("0" + minutes) : minutes)
+                (minutes < 10 ? ("0" + minutes) : minutes)
                         + ":"
                         + (seconds < 10 ? ("0" + seconds) : seconds)
-                        );
+        );
     }
 
     private void findViews() {
@@ -247,24 +254,26 @@ public class Activity_Game extends AppCompatActivity {
 
         } else {
 
-        }if (gameManager.isGameOver()) {
-            if(myTicker.isRunning()){
+        }
+        if (gameManager.isGameOver()) {
+            if (myTicker.isRunning()) {
                 myTicker.stop();
             }
-            if(secondCard) {
+            if (secondCard) {
                 endGame();
 
-            }else{
+            } else {
                 secondCard = true;
             }
         }
+        gameManager.saveGameState();
     }
 
     private void endGame() {
         player_1.gameOver(false,
                 gameManager.getPlayerOneScore() > gameManager.getPlayerTwoScore());
         firebaseManager.saveUser(player_1);
-        if(player_2 != null){
+        if (player_2 != null) {
             player_2.gameOver(false,
                     gameManager.getPlayerOneScore() > gameManager.getPlayerTwoScore());
             firebaseManager.saveUser(player_2);
@@ -313,6 +322,7 @@ public class Activity_Game extends AppCompatActivity {
     }
 
     private void playTwoCardAnimation(boolean matchFound) {
+        playSoundOnce = true;
         for (int[] card : gameManager.getFlippedCards()) {
             int row = card[0];
             int col = card[1];
@@ -329,24 +339,31 @@ public class Activity_Game extends AppCompatActivity {
                             public void run() {
                                 gameManager.flipCard(row, col);
                                 if (matchFound) {
-                                    gameManager.playGameSound(MATCH_FOUND);
-                                    if(singlePlayer){
+                                    if(playSoundOnce) {
+                                        gameManager.playGameSound(MATCH_FOUND);
+                                        playSoundOnce = false;
+                                    }
+                                    if (singlePlayer) {
                                         single_player_score
-                                                .setText(gameManager.getPlayerOneScore()+"");
-                                    }else{
-                                        if(gameManager.getCurrentPlayer() == 0){
+                                                .setText(gameManager.getPlayerOneScore() + "");
+                                    } else {
+                                        if (gameManager.getCurrentPlayer() == 0) {
                                             player_one_score
-                                                    .setText(gameManager.getPlayerOneScore()+"");
-                                        }else{
+                                                    .setText(gameManager.getPlayerOneScore() + "");
+                                        } else {
                                             player_two_score
-                                                    .setText(gameManager.getPlayerTwoScore()+"");
+                                                    .setText(gameManager.getPlayerTwoScore() + "");
                                         }
                                     }
                                     cardView.setVisibility(View.INVISIBLE);
+                                    gameManager.setCardInVisibility(row, col, !VISIBLE);
                                     MySignal.getInstance()
                                             .frenchToast(Math.random() < 0.5 ? "Nice!" : "Good Job!");
                                 } else {
-                                    gameManager.playGameSound(TWO_CARD_FLIP);
+                                    if(playSoundOnce) {
+                                        gameManager.playGameSound(TWO_CARD_FLIP);
+                                        playSoundOnce = false;
+                                    }
                                     imageView.setImageResource(gameManager.getDefaultImageReference());
                                 }
                             }
@@ -360,7 +377,7 @@ public class Activity_Game extends AppCompatActivity {
         }
     }
 
-    private void playEndGameAnimation(){
+    private void playEndGameAnimation() {
         Animation fade_in = AnimationUtils.loadAnimation(Activity_Game.this, R.anim.fade_in);
         fade_in.setAnimationListener(new Animation.AnimationListener() {
             @Override

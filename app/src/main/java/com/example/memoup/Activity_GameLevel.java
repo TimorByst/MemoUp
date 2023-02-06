@@ -47,6 +47,12 @@ public class Activity_GameLevel extends AppCompatActivity {
         stopService(serviceIntent);
     }
 
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        finish();
+    }
+
     private void findViews() {
         creator_TXT = findViewById(R.id.creator_TXT);
         headline_TXT_level = findViewById(R.id.headline_TXT_level);

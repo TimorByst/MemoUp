@@ -39,14 +39,15 @@ public class Activity_Login extends AppCompatActivity {
         if (user == null) {
             prettyLogin();
         } else {
+            myUser = new MyUser(user.getUid());
             firebaseManager.loadUser(user.getUid(),
                     new FirebaseManager.OnUserLoadedListener() {
                         @Override
                         public void onUserLoaded(MyUser user) {
-                            int x = 5 + 5;
-                            myUser = user;
-                            Log.d("TIMOR",
-                                    "user: " + myUser.getUsername());
+                            myUser.setUsername(user.getUsername())
+                                    .setGamesPlayedMulti(user.getGamesPlayedMulti())
+                                    .setGamesPlayedSolo(user.getGamesPlayedSolo())
+                                    .setWins(user.getWins());
                         }
 
                         @Override
@@ -75,6 +76,12 @@ public class Activity_Login extends AppCompatActivity {
         super.onPause();
         Intent serviceIntent = new Intent(this, MyMusicService.class);
         stopService(serviceIntent);
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        finish();
     }
 
     private void prettyLogin() {

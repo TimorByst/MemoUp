@@ -39,7 +39,6 @@ public class Activity_Splash extends AppCompatActivity {
         findViews();
         initViews();
         playSplashAnimationWithDelay();
-
     }
 
     private void findViews() {
@@ -74,6 +73,12 @@ public class Activity_Splash extends AppCompatActivity {
         stopService(serviceIntent);
     }
 
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        finish();
+    }
+
     private void playSplashAnimationWithDelay() {
         new Handler().postDelayed(new Runnable() {
             @Override
@@ -106,9 +111,9 @@ public class Activity_Splash extends AppCompatActivity {
                                 Activity_Login.class),
                         Activity_Splash.this));
 
+
         splash_TXT_name.startAnimation(slide_right_to_left);
     }
-
 
     @Override
     public void onWindowFocusChanged(boolean hasFocus) {
