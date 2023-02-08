@@ -10,6 +10,7 @@ public class MyUser implements Serializable {
     private int wins = 0;
     private int gamesPlayedSolo = 0;
     private int gamesPlayedMulti = 0;
+    public boolean isCreator;
 
     public MyUser() {
     } //Default constructor

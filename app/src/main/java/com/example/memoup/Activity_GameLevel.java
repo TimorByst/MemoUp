@@ -1,13 +1,18 @@
 package com.example.memoup;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.textview.MaterialTextView;
+import com.google.firebase.database.FirebaseDatabase;
 
 public class Activity_GameLevel extends AppCompatActivity {
 
@@ -17,7 +22,6 @@ public class Activity_GameLevel extends AppCompatActivity {
     private MaterialTextView creator_TXT;
     private MaterialTextView headline_TXT_level;
     private MyUser player_1;
-    private MyUser player_2;
     private boolean singlePlayer;
 
 
@@ -89,6 +93,7 @@ public class Activity_GameLevel extends AppCompatActivity {
             intent = new Intent(this, Activity_Online.class);
         }
         intent.putExtra(MyUtility.PLAYER_1, player_1);
+        intent.putExtra(MyUtility.SINGLE_PLAYER, singlePlayer);
         intent.putExtra(MyUtility.BOARD_SIZE, boardSize);
         startActivity(intent);
     }

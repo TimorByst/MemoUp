@@ -6,16 +6,19 @@ import android.net.Uri;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.firebase.database.ChildEventListener;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.GenericTypeIndicator;
 import com.google.firebase.database.ValueEventListener;
-import com.google.firebase.storage.FirebaseStorage;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -26,38 +29,20 @@ import java.util.List;
 import java.util.Map;
 
 public class GameManager {
-    /*Default name showed on faced down cards*/
-    private final String TAG = "MemoUpLogs";
-    /*The number of images that supported for a game*/
-    private final int IMAGE_COUNT = 18;
-    /*Player 1 marker*/
-    private final int PLAYER_ONE = 0;
-    /*Player 2 marker*/
-    private final int PLAYER_TWO = 1;
-    /*Constant to for board size*/
-    private final int SMALL = 4;
-    /*Constant to for board size*/
-    private final int MEDIUM = 5;
     /*The size of the game board*/
     private int boardSize;
     /*The number of cards that are currently facing up*/
     private int facedUpCards = 0;
     /*The number of matches found so far*/
     private int matchesFound = 1;
-    /*Used to mark the current turn*/
-    private int currentPlayerTurn;
     /*Used to mark the player 1 game score*/
     private int playerOneScore = 0;
     /*Used to mark the player 2 game score*/
     private int playerTwoScore = 0;
-    /*Used to count save tries*/
-    private int saveTrials = 0;
-    /*Used to indicate id the game was successfully saved*/
-    private boolean gameStateSaved;
     /*Used to indicate if a card is faced up or down (true - up, false - down)*/
-    private boolean[][] cardFacedUp;
+    private ArrayList<Boolean> cardFacedUp;
     /*Used to indicate if a card is in play or not*/
-    private boolean[][] cardsInPlay;
+    private ArrayList<Boolean> cardsInPlay;
     /*Used to hold the current faced up cards indexes*/
     private ArrayList<int[]> currentFacedUpCards = new ArrayList<int[]>() {
         {
@@ -70,88 +55,89 @@ public class GameManager {
     /*Game id*/
     private String gameId;
     /*Used to hold the image location on board*/
-    private String[][] cardImageNames;
-    /*Used to follow all gameManager instances*/
-    private static Map<String, GameManager> gameSessions = new HashMap<>();
+    private ArrayList<String> cardImageNames;
     /*Used to map image name to its R.drawable.image*/
     private final Map<String, Integer> images = new HashMap<>();
     /*Used to map sound resources to their names*/
     private final Map<String, Integer> sounds = new HashMap<>();
-    private FirebaseStorage firebaseStorage;
-    private FirebaseDatabase firebaseDatabase;
+    private FirebaseDatabase firebaseDatabase = FirebaseDatabase.getInstance();
     private DatabaseReference databaseReference;
     private MyUser player_1;
     private MyUser player_2;
+    /*Used to mark the current turn*/
+    private String currentPlayerTurn;
     private MediaPlayer mediaPlayer;
-    private GameManager gameManager;
 
     public MyUser getPlayer_1() {
         return player_1;
-    }
-
-    private void setPlayer_1(MyUser player_1) {
-        this.player_1 = player_1;
     }
 
     public MyUser getPlayer_2() {
         return player_2;
     }
 
-    private void setPlayer_2(MyUser player_2) {
-        this.player_2 = player_2;
-    }
-
-    private void addPlayer(MyUser player) {
-        if (player_1 == null) {
-            setPlayer_1(player);
-        } else {
-            if (!player.getId().equalsIgnoreCase(player_1.getId())) {
-                setPlayer_2(player);
-            }
-        }
-    }
 
     public GameManager() {
     }// Default Constructor
 
-    public GameManager init(int boardSize, MyUser player) {
-        gameManager = gameSessions.get(player.getSessionKey());
-        if (gameManager == null) {
-            gameManager = new GameManager(boardSize, player);
-            gameSessions.put(player.getSessionKey(), gameManager);
-        }
-        addPlayer(player);
-        return gameManager;
+
+    public GameManager(int boardSize, MyUser player_1, MyUser player_2, ArrayList<String> cardImageNames) {
+        gameId = player_1.getSessionKey();
+        this.player_1 = player_1;
+        this.player_2 = player_2;
+        this.boardSize = boardSize;
+        initBoard();
+        initImageMap();
+        initGameSounds();
+        this.cardImageNames = cardImageNames;
+        setGameStateEventListener(gameId);
     }
+
 
     /**
      * GameManager constructor, receives the board size and initializes game
      *
      * @param boardSize the size of the board
      */
-    private GameManager(int boardSize, MyUser player) {
+    public GameManager(int boardSize, MyUser player) {
+
         gameId = player.getSessionKey();
+        player_1 = player;
         this.boardSize = boardSize;
         firebaseDatabase = FirebaseDatabase.getInstance();
-        /*The node name references in the firebase database*/
-        databaseReference = firebaseDatabase.getReference("Games");
-        setValueEventListener(gameId);
         initBoard();
         initGameSounds();
         initImageMap();
         randomizeImageLocations();
     }
 
+    public GameManager(int boardSize){
+        this.boardSize = boardSize;
+    }
+
+    private void numOfSessions(){
+        databaseReference = firebaseDatabase.getReference();
+        databaseReference.child(MyUtility.GAME_SESSIONS).addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                Log.d(MyUtility.LOG_TAG, "There are currently " + dataSnapshot.getChildrenCount() + " games sessions");
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+
+            }
+        });
+    }
+
+
     /**
      * Sets all cards state to 0 (indicates that they are face down)
      */
     private void initBoard() {
-        cardFacedUp = new boolean[this.boardSize][this.boardSize];
-        cardsInPlay = new boolean[this.boardSize][this.boardSize];
-        for (int i = 0; i < this.boardSize; i++) {
-            Arrays.fill(cardFacedUp[i], false);
-            Arrays.fill(cardsInPlay[i], true);
-        }
+        cardFacedUp = new ArrayList<>(Collections.nCopies(boardSize * boardSize, false));
+        cardsInPlay = new ArrayList<>(Collections.nCopies(boardSize * boardSize, true));
+        cardImageNames = new ArrayList<>();
     }
 
     /**
@@ -192,77 +178,111 @@ public class GameManager {
      * This function randomizes the image indexes in order
      * to randomize the image location on the board
      */
-    private void randomizeImageLocations() {
-        List<String> imageList = new ArrayList<>();
-        imageList.add("Bear");
-        imageList.add("Cat");
-        imageList.add("Cougar");
-        imageList.add("Dog");
-        imageList.add("Elephant");
-        imageList.add("Fox");
-        imageList.add("Frog");
-        imageList.add("Koala");
+    public void randomizeImageLocations() {
+        if (cardImageNames == null) {
+            cardImageNames = new ArrayList<>();
+        }
+        cardImageNames.add("Bear");
+        cardImageNames.add("Cat");
+        cardImageNames.add("Cougar");
+        cardImageNames.add("Dog");
+        cardImageNames.add("Elephant");
+        cardImageNames.add("Fox");
+        cardImageNames.add("Frog");
+        cardImageNames.add("Koala");
 
+        /*Constant to for board size*/
+        int SMALL = 4;
         if (boardSize > SMALL) {
-            imageList.add("Leopard");
-            imageList.add("Lion");
-            imageList.add("Monkey");
-            imageList.add("Panda");
+            cardImageNames.add("Leopard");
+            cardImageNames.add("Lion");
+            cardImageNames.add("Monkey");
+            cardImageNames.add("Panda");
         }
 
+        /*Constant to for board size*/
+        int MEDIUM = 5;
         if (boardSize > MEDIUM) {
-            imageList.add("Panther");
-            imageList.add("Rat");
-            imageList.add("Red_Panda");
-            imageList.add("Rhino");
-            imageList.add("Tiger");
-            imageList.add("Wolf");
+            cardImageNames.add("Panther");
+            cardImageNames.add("Rat");
+            cardImageNames.add("Red_Panda");
+            cardImageNames.add("Rhino");
+            cardImageNames.add("Tiger");
+            cardImageNames.add("Wolf");
         }
 
-        List<String> imageListCopy = new ArrayList<>(imageList);
-        imageList.addAll(imageListCopy);
+        List<String> cardImageNamesCopy = new ArrayList<>(cardImageNames);
+        cardImageNames.addAll(cardImageNamesCopy);
         if (boardSize == MEDIUM) {
-            imageList.add("Jester");
+            cardImageNames.add("Jester");
         }
         try {
-            Collections.shuffle(imageList);
+            Collections.shuffle(cardImageNames);
         } catch (UnsupportedOperationException e) {
-            Log.d(TAG, "Error while trying to shuffle the images: " + e);
-        }
-
-        cardImageNames = new String[boardSize][boardSize];
-        for (int i = 0; i < boardSize; i++) {
-            for (int j = 0; j < boardSize; j++) {
-                cardImageNames[i][j] = imageList.remove(0);
-            }
+            Log.d(MyUtility.LOG_TAG, "Error while trying to shuffle the images: " + e);
         }
     }
 
+/*    public void createGameSession(MyUser player) {
+        firebaseDatabase.getReference(MyUtility.GAME_SESSIONS)
+                .child(player.getSessionKey())
+                .setValue(cardImageNames)
+                .addOnSuccessListener(new OnSuccessListener<Void>() {
+                    @Override
+                    public void onSuccess(Void unused) {
+                        Log.d(MyUtility.LOG_TAG, "Game Session gave been saved successfully");
+                    }
+                }).addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        Log.e(MyUtility.LOG_TAG, "Failed to save game session " + e.getMessage());
+                    }
+                });
+    }*/
+
+    private void loadGameSession(String sessionKey, MyUser player) {
+        Log.d(MyUtility.LOG_TAG, player.getUsername() + " is loading a game session");
+        databaseReference = firebaseDatabase.getReference(MyUtility.GAME_SESSIONS).child(sessionKey);
+        databaseReference.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                try {
+                    cardImageNames = (ArrayList<String>) dataSnapshot.getValue();
+                    Log.d(MyUtility.LOG_TAG, player.getUsername() + " loaded the game session successfully");
+                } catch (NullPointerException | ClassCastException e) {
+                    Log.e(MyUtility.LOG_TAG, "Couldn't load game session " + e.getMessage());
+                }
+                Log.d(MyUtility.LOG_TAG, cardImageNames.toString());
+            }
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+
+            }
+        });
+    }
+
     public void saveGameState() {
+        databaseReference = firebaseDatabase.getReference(MyUtility.GAMES);
         Map<String, Object> gameState = toMap();
         databaseReference.child(gameId).setValue(gameState)
                 .addOnSuccessListener(new OnSuccessListener<Void>() {
                     @Override
                     public void onSuccess(Void unused) {
-                        Log.d(TAG, "gameState have been successfully saved");
-                        saveTrials = 0;
-                        gameStateSaved = true;
+                        Log.d(MyUtility.LOG_TAG, "gameState have been successfully saved");
                     }
                 })
                 .addOnFailureListener(new OnFailureListener() {
                     @Override
                     public void onFailure(@NonNull Exception e) {
-                        Log.d(TAG, "Couldn't save gameState");
-                        saveTrials++;
-                        gameStateSaved = false;
-                        if (saveTrials < 2) {
-                            saveGameState();
-                        }
+                        Log.d(MyUtility.LOG_TAG, "Couldn't save gameState");
                     }
                 });
     }
 
-    private void setValueEventListener(String gameSessionId) {
+    private void setGameStateEventListener
+            (String gameSessionId) {
+        databaseReference = firebaseDatabase.getReference(MyUtility.GAMES);
+
         databaseReference.child(gameSessionId).addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
@@ -274,88 +294,58 @@ public class GameManager {
                     /**
                      * TO DO: add failure case
                      */
-                    Log.d(TAG, "gameState loaded successfully");
+                    Log.d(MyUtility.LOG_TAG, "gameState loaded successfully");
                 }
             }
 
             @Override
             public void onCancelled(@NonNull DatabaseError error) {
-                Log.e(TAG, "Couldn't load gameState: " + error);
+                Log.e(MyUtility.LOG_TAG, "Couldn't load gameState: " + error);
             }
         });
     }
 
     private Map<String, Object> toMap() {
         Map<String, Object> gameState = new HashMap<>();
-        List<List<Boolean>> listOfListsOfCardsInPlay = new ArrayList<>();
-        for (boolean[] row : cardsInPlay) {
-            List<Boolean> listRow = new ArrayList<>(row.length);
-            for (boolean col : row) {
-                listRow.add(col);
-            }
-            listOfListsOfCardsInPlay.add(listRow);
-        }
-        gameState.put("cardsInPlay", listOfListsOfCardsInPlay);
+        gameState.put("cardsInPlay", cardsInPlay);
         gameState.put("playerTwoScore", playerTwoScore);
         gameState.put("playerOneScore", playerOneScore);
         gameState.put("currentPlayerTurn", currentPlayerTurn);
         gameState.put("matchesFound", matchesFound);
-        //gameState.put("player_1", player_1.getId());
-        //gameState.put("player_2", player_2.getId() == null ? 0 : player_2.getId());
-
         return gameState;
     }
 
     private boolean toObject(Map<String, Object> gameState) {
-        List<List<Boolean>> listOfCardsInPlay = (List<List<Boolean>>) gameState.get("cardsInPlay");
-        if (listOfCardsInPlay == null) {
-            Log.e(TAG, "Error while trying to load data to gameManager. List of cards in play is null.");
+        cardsInPlay = (ArrayList<Boolean>) gameState.get("cardsInPlay");
+        if (cardsInPlay == null) {
+            Log.e(MyUtility.LOG_TAG, "Error while trying to load data to gameManager. List of cards in play is null.");
             return false;
-        }
-
-        for (int i = 0; i < boardSize; i++) {
-            List<Boolean> list = listOfCardsInPlay.get(i);
-            if (list == null) {
-                Log.e(TAG, "Error while trying to load data to gameManager. List is null.");
-                return false;
-            }
-
-            boolean[] row = new boolean[list.size()];
-            for (int j = 0; j < boardSize; j++) {
-                Boolean value = list.get(j);
-                if (value == null) {
-                    Log.e(TAG, "Error while trying to load data to gameManager. Value is null.");
-                    return false;
-                }
-                row[j] = value;
-            }
-            cardsInPlay[i] = row;
         }
 
         Long playerOneScore = (Long) gameState.get("playerOneScore");
         if (playerOneScore == null) {
-            Log.e(TAG, "Error while trying to load data to gameManager. Player one score is null.");
+            Log.e(MyUtility.LOG_TAG, "Error while trying to load data to gameManager. Player one score is null.");
             return false;
         }
         this.playerOneScore = playerOneScore.intValue();
 
         Long playerTwoScore = (Long) gameState.get("playerTwoScore");
         if (playerTwoScore == null) {
-            Log.e(TAG, "Error while trying to load data to gameManager. Player two score is null.");
+            Log.e(MyUtility.LOG_TAG, "Error while trying to load data to gameManager. Player two score is null.");
             return false;
         }
         this.playerTwoScore = playerTwoScore.intValue();
 
-        Long currentPlayerTurn = (Long) gameState.get("currentPlayerTurn");
+        String currentPlayerTurn = (String) gameState.get("currentPlayerTurn");
         if (currentPlayerTurn == null) {
-            Log.e(TAG, "Error while trying to load data to gameManager. Current player turn is null.");
+            Log.e(MyUtility.LOG_TAG, "Error while trying to load data to gameManager. Current player turn is null.");
             return false;
         }
-        this.currentPlayerTurn = currentPlayerTurn.intValue();
+        this.currentPlayerTurn = currentPlayerTurn;
 
         Long matchesFound = (Long) gameState.get("matchesFound");
         if (matchesFound == null) {
-            Log.e(TAG, "Error while trying to load data to gameManager. Matches found is null.");
+            Log.e(MyUtility.LOG_TAG, "Error while trying to load data to gameManager. Matches found is null.");
             return false;
         }
         this.matchesFound = matchesFound.intValue();
@@ -370,8 +360,8 @@ public class GameManager {
      * @param col the image col
      */
     public void flipCard(int row, int col) {
-        cardFacedUp[row][col] = !cardFacedUp[row][col];
-        if (cardFacedUp[row][col]) {
+        cardFacedUp.set(row * boardSize + col, !cardFacedUp.get(row * boardSize + col));
+        if (cardFacedUp.get(row * boardSize + col)) {
             currentFacedUpCards.set(facedUpCards, new int[]{row, col});
             facedUpCards++;
         } else {
@@ -389,9 +379,9 @@ public class GameManager {
      * @return 1 if equal else 0
      */
     public boolean checkMatch(int imageRow, int imageCol) {
-        if (comparisonCard.equalsIgnoreCase(cardImageNames[imageRow][imageCol])) {
+        if (comparisonCard.equalsIgnoreCase(cardImageNames.get(imageRow * boardSize + imageCol))) {
             matchesFound++;
-            if (currentPlayerTurn == 0) {
+            if (player_1.getId().equalsIgnoreCase(currentPlayerTurn)) {
                 playerOneScore++;
             } else {
                 playerTwoScore++;
@@ -399,9 +389,17 @@ public class GameManager {
             return true;
         }
         if (player_2 != null) {
-            currentPlayerTurn = ~currentPlayerTurn;
+            switchTurns();
         }
         return false;
+    }
+
+    private void switchTurns() {
+        if (player_1.getId().equalsIgnoreCase(currentPlayerTurn)) {
+            currentPlayerTurn = player_2.getId();
+        } else {
+            currentPlayerTurn = player_1.getId();
+        }
     }
 
     /**
@@ -417,7 +415,7 @@ public class GameManager {
             throw new ArrayIndexOutOfBoundsException(
                     "Index " + (imageRow > boardSize ? imageRow : imageCol) + " is out of bounds");
         } else {
-            comparisonCard = cardImageNames[imageRow][imageCol];
+            comparisonCard = cardImageNames.get(imageRow * boardSize + imageCol);
         }
     }
 
@@ -437,11 +435,11 @@ public class GameManager {
             throw new ArrayIndexOutOfBoundsException(
                     "Index " + (row > boardSize ? row : col) + " is out of bounds");
         }
-        Integer imageResource = images.get(cardImageNames[row][col]);
+        Integer imageResource = images.get(cardImageNames.get(row * boardSize + col));
         if (imageResource != null) {
             return imageResource;
         } else {
-            throw new NullPointerException(cardImageNames[row][col] + " doesn't exists in images");
+            throw new NullPointerException(cardImageNames.get(row * boardSize + col) + " doesn't exists in images");
         }
     }
 
@@ -468,12 +466,16 @@ public class GameManager {
             mediaPlayer.prepare();
             mediaPlayer.start();
         } catch (IOException e) {
-            Log.d(TAG, "GameManager: MediaPlayer error: " + e.getMessage());
+            Log.d(MyUtility.LOG_TAG, "GameManager: MediaPlayer error: " + e.getMessage());
         }
     }
 
+    public ArrayList<String> getCardImageNames(){return cardImageNames;}
+    public void setCardImageNames(ArrayList<String> names){
+        cardImageNames = names;
+    }
     public void setCardInVisibility(int row, int col, boolean visible) {
-        cardsInPlay[row][col] = visible;
+        cardsInPlay.set(row * boardSize + col, visible);
     }
 
     public String getGameId() {
@@ -484,7 +486,7 @@ public class GameManager {
         return boardSize;
     }
 
-    public Integer getDefaultImageReference() {
+    public Integer getDefaultImageResource() {
         return R.drawable.question_mark;
     }
 
@@ -512,17 +514,16 @@ public class GameManager {
         this.playerTwoScore = playerTwoScore;
     }
 
-    public int getCurrentPlayer() {
+    public String getCurrentPlayer() {
         return currentPlayerTurn;
     }
 
-    public void setCurrentPlayer(int currentPlayer) {
+    public void setCurrentPlayer(String currentPlayer) {
         this.currentPlayerTurn = currentPlayer;
     }
 
     public void destroy(String sessionKey) {
         mediaPlayer.release();
         databaseReference.child(gameId).removeValue();
-        gameSessions.remove(sessionKey);
     }
 }

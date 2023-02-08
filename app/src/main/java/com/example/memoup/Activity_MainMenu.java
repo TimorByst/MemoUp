@@ -1,5 +1,6 @@
 package com.example.memoup;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.Intent;
@@ -7,8 +8,14 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.textview.MaterialTextView;
+import com.google.firebase.database.FirebaseDatabase;
+
+import java.util.UUID;
+import java.util.concurrent.atomic.AtomicMarkableReference;
 
 public class Activity_MainMenu extends AppCompatActivity {
 
@@ -18,6 +25,7 @@ public class Activity_MainMenu extends AppCompatActivity {
     private MaterialTextView creator_TXT;
     private MaterialTextView headline_TXT_level;
     private MyUser player_1;
+    private FirebaseDatabase firebaseDatabase = FirebaseDatabase.getInstance();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -33,7 +41,9 @@ public class Activity_MainMenu extends AppCompatActivity {
         initButton(profile_BTN_mainMenu);
         initButton(solo_BTN_mainMenu);
         initButton(online_BTN_mainMenu);
+
     }
+
 
     @Override
     protected void onResume() {
@@ -68,19 +78,18 @@ public class Activity_MainMenu extends AppCompatActivity {
 
     private void clicked(int buttonId) {
         boolean solo = true;
-        if (buttonId == profile_BTN_mainMenu.getId()) {
-            /*Intent intent = new Intent(this, Activity_Game.class);
-            intent.putExtra("player_1", myUser);
-            startActivity(intent);*/
-        }
+        Intent intent;
         if (buttonId == online_BTN_mainMenu.getId()) {
             solo = false;
-
+            intent = new Intent(this, Activity_OnlineGameMenu.class);
+        } else if (buttonId == solo_BTN_mainMenu.getId()) {
+            intent = new Intent(this, Activity_GameLevel.class);
+        } else {
+            return;
         }
-        Intent intent = new Intent(this, Activity_GameLevel.class);
-            intent.putExtra(MyUtility.PLAYER_1, player_1);
-            intent.putExtra(MyUtility.SINGLE_PLAYER, solo);
-            startActivity(intent);
+        intent.putExtra(MyUtility.PLAYER_1, player_1);
+        intent.putExtra(MyUtility.SINGLE_PLAYER, solo);
+        startActivity(intent);
     }
 
     @Override

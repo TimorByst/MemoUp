@@ -22,7 +22,6 @@ import java.util.UUID;
 
 public class Activity_Game extends AppCompatActivity {
 
-    private final int FACE_UP_CARD = 180;
     private final int FLIP_CARD_ANIMATION_DURATION = 500;
     private final int TICK_SPEED = 1000;
     private final String GAME_START = "game_start";
@@ -32,30 +31,18 @@ public class Activity_Game extends AppCompatActivity {
     private final String TWO_CARD_FLIP = "two_card_flip";
     private final boolean VISIBLE = true;
     private int boardSize;
-    private float timePassed = 0;
     private boolean firstStart = true;
     private boolean playSoundOnce = true;
     private boolean secondCard = false;
-    private boolean singlePlayer = true;
     private boolean flipInProgress = false;
     private AppCompatTextView single_player_time;
     private AppCompatTextView single_player_score;
-    private AppCompatTextView player_one_TXT_name;
-    private AppCompatTextView player_one_win_rate;
-    private AppCompatTextView player_one_score;
-    private AppCompatTextView player_two_TXT_name;
-    private AppCompatTextView player_two_win_rate;
-    private AppCompatTextView player_two_score;
-    private ShapeableImageView player_one_IMG;
-    private ShapeableImageView player_two_IMG;
     private ShapeableImageView game_over_IMG;
     private MyTicker myTicker;
     private GridLayout gameBoard;
-    private GameManager gameManager = new GameManager();
+    private GameManager gameManager;
     private CallbackTimer callbackTimer;
-    private MyUser player_1;
-    private MyUser player_2;
-    private FirebaseManager firebaseManager;
+    private MyUser player;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -64,19 +51,19 @@ public class Activity_Game extends AppCompatActivity {
         setContentView(R.layout.activity_game);
         Intent previous = getIntent();
         boardSize = previous.getIntExtra(MyUtility.BOARD_SIZE, boardSize);
-        player_1 = (MyUser) previous.getSerializableExtra(MyUtility.PLAYER_1);
-        singlePlayer = previous.getBooleanExtra(MyUtility.SINGLE_PLAYER, singlePlayer);
+        player = (MyUser) previous.getSerializableExtra(MyUtility.PLAYER_1);
+        initGamaManager();
         findViews();
         initViews();
-        initGame(player_1);
-        if (singlePlayer) {
-            myTicker = new MyTicker(callbackTimer);
-            runTimer();
-        } else {
-
-        }
+        initGame(player);
+        myTicker = new MyTicker(callbackTimer);
+        runTimer();
         Intent serviceIntent = new Intent(this, MyMusicService.class);
         stopService(serviceIntent);
+    }
+
+    private void initGamaManager() {
+        gameManager = new GameManager(boardSize, player);
     }
 
     @Override
@@ -128,7 +115,6 @@ public class Activity_Game extends AppCompatActivity {
     }
 
     private void ticker() {
-        timePassed++;
         String[] currentTime = single_player_time.getText().toString().split(":", 2);
         int seconds = Integer.parseInt(currentTime[1]) + 1;
         int minutes = Integer.parseInt(currentTime[0]);
@@ -146,14 +132,6 @@ public class Activity_Game extends AppCompatActivity {
     private void findViews() {
         single_player_time = findViewById(R.id.single_player_time);
         single_player_score = findViewById(R.id.single_player_score);
-        player_one_TXT_name = findViewById(R.id.player_one_TXT_name);
-        player_one_win_rate = findViewById(R.id.player_one_win_rate);
-        player_one_score = findViewById(R.id.player_one_score);
-        player_two_TXT_name = findViewById(R.id.player_two_TXT_name);
-        player_two_win_rate = findViewById(R.id.player_two_win_rate);
-        player_two_score = findViewById(R.id.player_two_score);
-        player_one_IMG = findViewById(R.id.player_one_IMG);
-        player_two_IMG = findViewById(R.id.player_two_IMG);
         game_over_IMG = findViewById(R.id.game_over_IMG);
         gameBoard = findViewById(R.id.gameBoard);
     }
@@ -180,11 +158,6 @@ public class Activity_Game extends AppCompatActivity {
      * </ol>
      */
     private void initViews() {
-        firebaseManager = FirebaseManager.getInstance();
-        if (singlePlayer) {
-            player_1.setSessionKey("SingleGame-" + UUID.randomUUID().toString());
-        }
-        gameManager = gameManager.init(boardSize, player_1);
         gameBoard.setRowCount(boardSize);
         gameBoard.setColumnCount(boardSize);
         for (int i = 0; i < boardSize * boardSize; i++) {
@@ -198,7 +171,7 @@ public class Activity_Game extends AppCompatActivity {
             params.setGravity(Gravity.CENTER);
             imageView.setLayoutParams(params);
             imageView.setBackgroundResource(R.drawable.memo_up_card_background);
-            loadImageResource(gameManager.getDefaultImageReference(), imageView);
+            loadImageResource(gameManager.getDefaultImageResource(), imageView);
             final int finalI = i / boardSize;
             final int finalJ = i % boardSize;
             imageView.setOnClickListener(new View.OnClickListener() {
@@ -223,19 +196,6 @@ public class Activity_Game extends AppCompatActivity {
         }
         single_player_time.setText("00:00");
         single_player_score.setText("0");
-        if (!singlePlayer) {
-            player_one_TXT_name.setVisibility(View.VISIBLE);
-            player_one_win_rate.setVisibility(View.VISIBLE);
-            player_one_score.setVisibility(View.VISIBLE);
-            player_two_TXT_name.setVisibility(View.VISIBLE);
-            player_two_win_rate.setVisibility(View.VISIBLE);
-            player_two_score.setVisibility(View.VISIBLE);
-            player_one_IMG.setVisibility(View.VISIBLE);
-            player_two_IMG.setVisibility(View.VISIBLE);
-
-            single_player_time.setVisibility(View.INVISIBLE);
-            single_player_score.setVisibility(View.INVISIBLE);
-        }
         gameManager.playGameSound(GAME_START, this);
     }
 
@@ -260,14 +220,7 @@ public class Activity_Game extends AppCompatActivity {
     }
 
     private void endGame() {
-        player_1.gameOver(false,
-                gameManager.getPlayerOneScore() > gameManager.getPlayerTwoScore());
-        firebaseManager.saveUser(player_1);
-        if (player_2 != null) {
-            player_2.gameOver(false,
-                    gameManager.getPlayerOneScore() > gameManager.getPlayerTwoScore());
-            firebaseManager.saveUser(player_2);
-        }
+        player.gameOver(false, true);
         playEndGameAnimation();
     }
 
@@ -283,9 +236,9 @@ public class Activity_Game extends AppCompatActivity {
      * @param col  The column index of the card being flipped.
      */
     private void flipCard(View view, int row, int col) {
+        gameBoard.setEnabled(false);
         ShapeableImageView imageView = (ShapeableImageView) view;
         gameManager.playGameSound(ONE_CARD_FLIP, this);
-        gameBoard.setEnabled(false);
         view
                 .animate()
                 .setDuration(FLIP_CARD_ANIMATION_DURATION)
@@ -334,30 +287,20 @@ public class Activity_Game extends AppCompatActivity {
                                                 Activity_Game.this);
                                         playSoundOnce = false;
                                     }
-                                    if (singlePlayer) {
-                                        single_player_score
-                                                .setText(gameManager.getPlayerOneScore() + "");
-                                    } else {
-                                        if (gameManager.getCurrentPlayer() == 0) {
-                                            player_one_score
-                                                    .setText(gameManager.getPlayerOneScore() + "");
-                                        } else {
-                                            player_two_score
-                                                    .setText(gameManager.getPlayerTwoScore() + "");
-                                        }
-                                    }
+                                    single_player_score
+                                            .setText(gameManager.getPlayerOneScore() + "");
                                     cardView.setVisibility(View.INVISIBLE);
                                     gameManager.setCardInVisibility(row, col, !VISIBLE);
                                     MySignal.getInstance()
                                             .frenchToast(Math.random() < 0.5 ? "Nice!" : "Good Job!");
-                                    gameManager.saveGameState();
+//                                    gameManager.saveGameState();
                                 } else {
                                     if (playSoundOnce) {
                                         gameManager.playGameSound(TWO_CARD_FLIP,
                                                 Activity_Game.this);
                                         playSoundOnce = false;
                                     }
-                                    imageView.setImageResource(gameManager.getDefaultImageReference());
+                                    imageView.setImageResource(gameManager.getDefaultImageResource());
                                 }
                             }
                         });

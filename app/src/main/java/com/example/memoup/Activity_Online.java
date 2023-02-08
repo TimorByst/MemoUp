@@ -5,34 +5,44 @@ import android.animation.ObjectAnimator;
 import android.animation.ValueAnimator;
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Handler;
 import android.util.Log;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.bumptech.glide.Glide;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.material.imageview.ShapeableImageView;
 import com.google.android.material.textview.MaterialTextView;
+import com.google.firebase.database.ChildEventListener;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+import com.google.gson.Gson;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
 public class Activity_Online extends AppCompatActivity {
 
     private ShapeableImageView online_IMG;
     private MaterialTextView online_TXT_wait;
     private MaterialTextView online_TXT_start;
-    private DatabaseReference databaseReference;
-    private MyUser player_1;
+    private FirebaseDatabase firebaseDatabase = FirebaseDatabase.getInstance();
+    private DatabaseReference databaseReference = firebaseDatabase.getReference(MyUtility.GAME_SESSIONS);
+    private MyUser player;
+    private List<String> players = new ArrayList<>();
     private int boardSize;
+    private GameManager gameManager;
+    private GameSession gameSession;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -40,11 +50,105 @@ public class Activity_Online extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_online);
         Intent previous = getIntent();
-        player_1 = (MyUser) previous.getSerializableExtra(MyUtility.PLAYER_1);
+        player = (MyUser) previous.getSerializableExtra(MyUtility.PLAYER_1);
         boardSize = previous.getIntExtra(MyUtility.BOARD_SIZE, boardSize);
         findViews();
         initViews();
-        findGame();
+
+
+        databaseReference
+                .addChildEventListener(new ChildEventListener() {
+                    @Override
+                    public void onChildAdded(@NonNull DataSnapshot snapshot,
+                                             @Nullable String previousChildName) {
+                        if (!player.isCreator) {
+                            String gameSessionJson = snapshot.getValue(String.class);
+                            gameSession = new Gson().fromJson(gameSessionJson, GameSession.class);
+                            if (gameSession.getPlayerTwo() != null
+                                    && gameSession.getPlayerTwo()
+                                    .getId().equalsIgnoreCase(player.getId())) {
+                                snapshot.getRef().removeValue();
+                            } else {
+                                AddPlayerToGameSession(player);
+                            }
+                        }
+                    }
+
+                    @Override
+                    public void onChildChanged(@NonNull DataSnapshot snapshot,
+                                               @Nullable String previousChildName) {
+                        if(player.isCreator){
+                            String gameSessionJson = snapshot.getValue(String.class);
+                            gameSession = new Gson().fromJson(gameSessionJson, GameSession.class);
+                            snapshot.getRef().removeValue();
+                        }
+                    }
+
+                    @Override
+                    public void onChildRemoved(@NonNull DataSnapshot snapshot) {
+                        Log.d(MyUtility.LOG_TAG, "A child hase been removed");
+                        Log.d(MyUtility.LOG_TAG, player.getUsername() + ", My board size is " + gameSession.getBoardSize());
+                        startGame();
+                    }
+
+                    @Override
+                    public void onChildMoved(@NonNull DataSnapshot snapshot,
+                                             @Nullable String previousChildName) {
+
+                    }
+
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError error) {
+
+                    }
+                });
+
+        if (player.isCreator) {
+            gameManager = new GameManager(boardSize);
+            gameManager.randomizeImageLocations();
+
+            gameSession = new GameSession();
+            gameSession.setBoardSize(gameManager.getBoardSize())
+                    .setCardImagesNames(gameManager.getCardImageNames())
+                    .setPlayerOne(player);
+
+            String gameSessionJson = new Gson().toJson(gameSession);
+            firebaseDatabase.getReference(MyUtility.GAME_SESSIONS)
+                    .child(player.getSessionKey())
+                    .setValue(gameSessionJson)
+                    .addOnSuccessListener(new OnSuccessListener<Void>() {
+                        @Override
+                        public void onSuccess(Void unused) {
+                            Log.d(MyUtility.LOG_TAG, "Game Session gave been saved successfully");
+                        }
+                    }).addOnFailureListener(new OnFailureListener() {
+                        @Override
+                        public void onFailure(@NonNull Exception e) {
+                            Log.e(MyUtility.LOG_TAG, "Failed to save game session " + e.getMessage());
+                        }
+                    });
+        }
+
+    }
+
+    private void AddPlayerToGameSession(MyUser player) {
+        gameSession.setPlayerTwo(player);
+
+        String gameSessionJson = new Gson().toJson(gameSession);
+        firebaseDatabase.getReference(MyUtility.GAME_SESSIONS)
+                .child(player.getSessionKey())
+                .setValue(gameSessionJson)
+                .addOnSuccessListener(new OnSuccessListener<Void>() {
+                    @Override
+                    public void onSuccess(Void unused) {
+                        Log.d(MyUtility.LOG_TAG, "A player has been added to a game session successfully");
+                    }
+                }).addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        Log.e(MyUtility.LOG_TAG, "Failed to add player game session " + e.getMessage());
+                    }
+                });
     }
 
     @Override
@@ -68,53 +172,47 @@ public class Activity_Online extends AppCompatActivity {
     }
 
     private void findGame() {
-        FirebaseDatabase firebaseDatabase = FirebaseManager.getInstance().getFirebaseDatabase();
-        databaseReference = firebaseDatabase.getReference(MyUtility.QUEUE);
-
-        databaseReference.addListenerForSingleValueEvent(new ValueEventListener() {
+        databaseReference.addChildEventListener(new ChildEventListener() {
             @Override
-            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                if (dataSnapshot.getChildrenCount() > 1) {
-                    createGame();
-                } else {
-                    joinQueue();
-                }
+            public void onChildAdded(@NonNull DataSnapshot dataSnapshot, @Nullable String previousChildName) {
+                String playerId = dataSnapshot.getValue(String.class);
+                players.add(playerId);
+            }
+
+            @Override
+            public void onChildChanged(@NonNull DataSnapshot snapshot, @Nullable String previousChildName) {
+
+            }
+
+            @Override
+            public void onChildRemoved(@NonNull DataSnapshot dataSnapshot) {
+                String playerId = dataSnapshot.getValue(String.class);
+                players.remove(playerId);
+            }
+
+            @Override
+            public void onChildMoved(@NonNull DataSnapshot snapshot, @Nullable String previousChildName) {
+
             }
 
             @Override
             public void onCancelled(@NonNull DatabaseError error) {
-                Log.e(MyUtility.LOG_TAG, "Error occurred while trying to find a game");
+                Log.e(MyUtility.LOG_TAG, "Load player queue cancelled", error.toException());
             }
         });
     }
 
-    private void createGame() {
-        databaseReference.addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                List<String> players = new ArrayList<>();
-                for (DataSnapshot childSnapshot : dataSnapshot.getChildren()) {
-                    players.add(childSnapshot.getValue(String.class));
-                    childSnapshot.getRef().removeValue();
-                    if (players.size() == 2) {
-                        break;
-                    }
-                }
-                if (players.size() == 2) {
-                    startGame();
-                }
-            }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError error) {
-                Log.e(MyUtility.LOG_TAG, "Error occurred while trying to create a new game");
-            }
-        });
+    private void checkStartGame() {
+        if (players.size() >= 2) {
+            String player_1 = players.get(0);
+            String player_2 = players.get(1);
+            startGame();
+        }
     }
 
     private void joinQueue() {
         databaseReference.push()
-                .setValue(player_1.getId())
+                .setValue(player.getId())
                 .addOnSuccessListener(
                         unused -> Log.d(MyUtility.LOG_TAG, "A player have joined a queue")
                 )
@@ -122,38 +220,58 @@ public class Activity_Online extends AppCompatActivity {
                         e -> Log.e(MyUtility.LOG_TAG, "A player have failed to join a queue"));
     }
 
-    private void startGame() {
-        player_1.setSessionKey(UUID.randomUUID().toString());
-        Intent intent = new Intent(this, Activity_Game.class);
-        intent.putExtra(MyUtility.BOARD_SIZE, boardSize);
-        intent.putExtra(MyUtility.PLAYER_1, player_1);
-        Animation fade_in = AnimationUtils.loadAnimation(this, R.anim.fade_in);
-        Animation fade_out = AnimationUtils.loadAnimation(this, R.anim.fade_out);
-        fade_out
-                .setAnimationListener(
-                        new MyAnimationListener(
-                                fade_in,
-                                online_TXT_start,
-                                null,
-                                Activity_Online.this
-                        )
-                );
-        fade_in
-                .setAnimationListener(
-                        new MyAnimationListener(
-                                null,
-                                null,
-                                intent,
-                                Activity_Online.this
-                        )
-                );
-        online_TXT_wait.startAnimation(fade_out);
+    private void deQueue() {
+        databaseReference.getRef().removeValue();
     }
 
+    private void startGame() {
+
+        //deQueue();
+        Log.d(MyUtility.LOG_TAG, player.getUsername() + " boardSize - " + boardSize);
+        Intent intent = new Intent(this, Activity_Multiplayer.class);
+        intent.putExtra(MyUtility.BOARD_SIZE, boardSize);
+        intent.putExtra(MyUtility.PLAYER_1, player);
+        intent.putExtra(MyUtility.SINGLE_PLAYER, false);
+        intent.putExtra(MyUtility.GAME_SESSIONS, gameSession);
+        if (player.isCreator) {
+            /*online_TXT_wait.setText("Waiting for other player...");
+            gameManager = new GameManager(boardSize);
+            gameManager.randomizeImageLocations();
+            createGameSession(player, gameManager);*/
+            startActivity(intent);
+        } else {
+            Animation fade_in = AnimationUtils.loadAnimation(this, R.anim.fade_in);
+            Animation fade_out = AnimationUtils.loadAnimation(this, R.anim.fade_out);
+            fade_out
+                    .setAnimationListener(
+                            new MyAnimationListener(
+                                    fade_in,
+                                    online_TXT_start,
+                                    null,
+                                    Activity_Online.this
+                            )
+                    );
+            fade_in
+                    .setAnimationListener(
+                            new MyAnimationListener(
+                                    null,
+                                    null,
+                                    intent,
+                                    Activity_Online.this
+                            )
+                    );
+            new Handler().postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    online_TXT_wait.startAnimation(fade_out);
+                }
+            }, 2000);
+        }
+        Log.d(MyUtility.LOG_TAG, "A game is starting");
+    }
 
     private void initViews() {
         Glide.with(this).load(R.drawable.memo_up_logo).into(online_IMG);
-
         ObjectAnimator scaleXAnimator = ObjectAnimator
                 .ofFloat(online_IMG, "scaleX", 1f, 1.2f, 1f);
         scaleXAnimator.setDuration(1750);
@@ -183,5 +301,25 @@ public class Activity_Online extends AppCompatActivity {
         }
     }
 
-
+    public void createGameSession(MyUser player, GameManager gameManager) {
+        gameSession = new GameSession();
+        gameSession.setBoardSize(gameManager.getBoardSize())
+                .setCardImagesNames(gameManager.getCardImageNames())
+                .setPlayerOne(player);
+        String gameSessionJson = new Gson().toJson(gameSession);
+        firebaseDatabase.getReference(MyUtility.GAME_SESSIONS)
+                .child(player.getSessionKey())
+                .setValue(gameSessionJson)
+                .addOnSuccessListener(new OnSuccessListener<Void>() {
+                    @Override
+                    public void onSuccess(Void unused) {
+                        Log.d(MyUtility.LOG_TAG, "Game Session gave been saved successfully");
+                    }
+                }).addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        Log.e(MyUtility.LOG_TAG, "Failed to save game session " + e.getMessage());
+                    }
+                });
+    }
 }
