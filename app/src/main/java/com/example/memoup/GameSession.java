@@ -5,8 +5,8 @@ import java.util.ArrayList;
 
 public class GameSession implements Serializable {
 
-    private MyUser playerOne;
-    private MyUser playerTwo;
+    private MyUser playerHost;
+    private MyUser playerGuest;
     private int boardSize;
     private String gameSessionId;
 
@@ -19,21 +19,21 @@ public class GameSession implements Serializable {
         return gameSessionId;
     }
 
-    public MyUser getPlayerOne() {
-        return playerOne;
+    public MyUser getPlayerHost() {
+        return playerHost;
     }
 
-    public GameSession setPlayerOne(MyUser playerOne) {
-        this.playerOne = playerOne;
+    public GameSession setPlayerHost(MyUser playerHost) {
+        this.playerHost = playerHost;
         return this;
     }
 
-    public MyUser getPlayerTwo() {
-        return playerTwo;
+    public MyUser getPlayerGuest() {
+        return playerGuest;
     }
 
-    public GameSession setPlayerTwo(MyUser playerTwo) {
-        this.playerTwo = playerTwo;
+    public GameSession setPlayerGuest(MyUser playerGuest) {
+        this.playerGuest = playerGuest;
         return this;
     }
 

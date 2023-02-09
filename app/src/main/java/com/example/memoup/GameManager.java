@@ -6,23 +6,18 @@ import android.net.Uri;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
-import com.google.firebase.database.ChildEventListener;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.GenericTypeIndicator;
 import com.google.firebase.database.ValueEventListener;
-import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -36,9 +31,9 @@ public class GameManager {
     /*The number of matches found so far*/
     private int matchesFound = 1;
     /*Used to mark the player 1 game score*/
-    private int playerOneScore = 0;
+    private int hostScore = 0;
     /*Used to mark the player 2 game score*/
-    private int playerTwoScore = 0;
+    private int guestScore = 0;
     /*Used to indicate if a card is faced up or down (true - up, false - down)*/
     private ArrayList<Boolean> cardFacedUp;
     /*Used to indicate if a card is in play or not*/
@@ -62,35 +57,37 @@ public class GameManager {
     private final Map<String, Integer> sounds = new HashMap<>();
     private FirebaseDatabase firebaseDatabase = FirebaseDatabase.getInstance();
     private DatabaseReference databaseReference;
-    private MyUser player_1;
-    private MyUser player_2;
+    private MyUser playerHost;
+    private MyUser playerGuest;
     /*Used to mark the current turn*/
     private String currentPlayerTurn;
     private MediaPlayer mediaPlayer;
 
-    public MyUser getPlayer_1() {
-        return player_1;
+    public MyUser getPlayerHost() {
+        return playerHost;
     }
 
-    public MyUser getPlayer_2() {
-        return player_2;
+    public MyUser getPlayerGuest() {
+        return playerGuest;
     }
 
 
-    public GameManager() {
+    public  GameManager() {
     }// Default Constructor
 
 
-    public GameManager(int boardSize, MyUser player_1, MyUser player_2, ArrayList<String> cardImageNames) {
-        gameId = player_1.getSessionKey();
-        this.player_1 = player_1;
-        this.player_2 = player_2;
+    public GameManager(int boardSize, MyUser host, MyUser guest, ArrayList<String> cardImageNames) {
+        gameId = host.getSessionKey();
+        this.playerHost = host;
+        this.playerGuest = guest;
         this.boardSize = boardSize;
         initBoard();
         initImageMap();
         initGameSounds();
         this.cardImageNames = cardImageNames;
-        setGameStateEventListener(gameId);
+        setCurrentPlayer(host.getId());
+        //setGameStateEventListener();
+        saveGameState();
     }
 
 
@@ -102,7 +99,7 @@ public class GameManager {
     public GameManager(int boardSize, MyUser player) {
 
         gameId = player.getSessionKey();
-        player_1 = player;
+        playerHost = player;
         this.boardSize = boardSize;
         firebaseDatabase = FirebaseDatabase.getInstance();
         initBoard();
@@ -114,22 +111,6 @@ public class GameManager {
     public GameManager(int boardSize){
         this.boardSize = boardSize;
     }
-
-    private void numOfSessions(){
-        databaseReference = firebaseDatabase.getReference();
-        databaseReference.child(MyUtility.GAME_SESSIONS).addValueEventListener(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                Log.d(MyUtility.LOG_TAG, "There are currently " + dataSnapshot.getChildrenCount() + " games sessions");
-            }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError error) {
-
-            }
-        });
-    }
-
 
     /**
      * Sets all cards state to 0 (indicates that they are face down)
@@ -223,44 +204,6 @@ public class GameManager {
         }
     }
 
-/*    public void createGameSession(MyUser player) {
-        firebaseDatabase.getReference(MyUtility.GAME_SESSIONS)
-                .child(player.getSessionKey())
-                .setValue(cardImageNames)
-                .addOnSuccessListener(new OnSuccessListener<Void>() {
-                    @Override
-                    public void onSuccess(Void unused) {
-                        Log.d(MyUtility.LOG_TAG, "Game Session gave been saved successfully");
-                    }
-                }).addOnFailureListener(new OnFailureListener() {
-                    @Override
-                    public void onFailure(@NonNull Exception e) {
-                        Log.e(MyUtility.LOG_TAG, "Failed to save game session " + e.getMessage());
-                    }
-                });
-    }*/
-
-    private void loadGameSession(String sessionKey, MyUser player) {
-        Log.d(MyUtility.LOG_TAG, player.getUsername() + " is loading a game session");
-        databaseReference = firebaseDatabase.getReference(MyUtility.GAME_SESSIONS).child(sessionKey);
-        databaseReference.addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                try {
-                    cardImageNames = (ArrayList<String>) dataSnapshot.getValue();
-                    Log.d(MyUtility.LOG_TAG, player.getUsername() + " loaded the game session successfully");
-                } catch (NullPointerException | ClassCastException e) {
-                    Log.e(MyUtility.LOG_TAG, "Couldn't load game session " + e.getMessage());
-                }
-                Log.d(MyUtility.LOG_TAG, cardImageNames.toString());
-            }
-            @Override
-            public void onCancelled(@NonNull DatabaseError error) {
-
-            }
-        });
-    }
-
     public void saveGameState() {
         databaseReference = firebaseDatabase.getReference(MyUtility.GAMES);
         Map<String, Object> gameState = toMap();
@@ -279,11 +222,10 @@ public class GameManager {
                 });
     }
 
-    private void setGameStateEventListener
-            (String gameSessionId) {
+    private void setGameStateEventListener() {
         databaseReference = firebaseDatabase.getReference(MyUtility.GAMES);
 
-        databaseReference.child(gameSessionId).addValueEventListener(new ValueEventListener() {
+        databaseReference.child(gameId).addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 if (dataSnapshot.exists()) {
@@ -291,9 +233,6 @@ public class GameManager {
                     };
                     Map<String, Object> gameState = dataSnapshot.getValue(typeIndicator);
                     toObject(gameState);
-                    /**
-                     * TO DO: add failure case
-                     */
                     Log.d(MyUtility.LOG_TAG, "gameState loaded successfully");
                 }
             }
@@ -307,49 +246,55 @@ public class GameManager {
 
     private Map<String, Object> toMap() {
         Map<String, Object> gameState = new HashMap<>();
+        gameState.put("PlayerMove", "0");
+        gameState.put("cardFacedUp", cardFacedUp);
         gameState.put("cardsInPlay", cardsInPlay);
-        gameState.put("playerTwoScore", playerTwoScore);
-        gameState.put("playerOneScore", playerOneScore);
+        gameState.put("guestScore", guestScore);
+        gameState.put("hostScore", hostScore);
         gameState.put("currentPlayerTurn", currentPlayerTurn);
         gameState.put("matchesFound", matchesFound);
         return gameState;
     }
 
-    private boolean toObject(Map<String, Object> gameState) {
+    private void toObject(Map<String, Object> gameState) {
+        cardFacedUp = (ArrayList<Boolean>) gameState.get("cardFacedUp");
+        if (cardsInPlay == null) {
+            Log.e(MyUtility.LOG_TAG, "Error while trying to load data to gameManager. List of cards in play is null.");
+            return;
+        }
         cardsInPlay = (ArrayList<Boolean>) gameState.get("cardsInPlay");
         if (cardsInPlay == null) {
             Log.e(MyUtility.LOG_TAG, "Error while trying to load data to gameManager. List of cards in play is null.");
-            return false;
+            return;
         }
 
         Long playerOneScore = (Long) gameState.get("playerOneScore");
         if (playerOneScore == null) {
             Log.e(MyUtility.LOG_TAG, "Error while trying to load data to gameManager. Player one score is null.");
-            return false;
+            return;
         }
-        this.playerOneScore = playerOneScore.intValue();
+        this.hostScore = playerOneScore.intValue();
 
         Long playerTwoScore = (Long) gameState.get("playerTwoScore");
         if (playerTwoScore == null) {
             Log.e(MyUtility.LOG_TAG, "Error while trying to load data to gameManager. Player two score is null.");
-            return false;
+            return;
         }
-        this.playerTwoScore = playerTwoScore.intValue();
+        this.guestScore = playerTwoScore.intValue();
 
         String currentPlayerTurn = (String) gameState.get("currentPlayerTurn");
         if (currentPlayerTurn == null) {
             Log.e(MyUtility.LOG_TAG, "Error while trying to load data to gameManager. Current player turn is null.");
-            return false;
+            return;
         }
         this.currentPlayerTurn = currentPlayerTurn;
 
         Long matchesFound = (Long) gameState.get("matchesFound");
         if (matchesFound == null) {
             Log.e(MyUtility.LOG_TAG, "Error while trying to load data to gameManager. Matches found is null.");
-            return false;
+            return;
         }
         this.matchesFound = matchesFound.intValue();
-        return true;
     }
 
     /**
@@ -369,6 +314,10 @@ public class GameManager {
         }
     }
 
+    public String getComparisonCard() {
+        return comparisonCard;
+    }
+
     /**
      * This function receives image indexes, if the image is equal by name to the comparison card,
      * return true
@@ -381,24 +330,26 @@ public class GameManager {
     public boolean checkMatch(int imageRow, int imageCol) {
         if (comparisonCard.equalsIgnoreCase(cardImageNames.get(imageRow * boardSize + imageCol))) {
             matchesFound++;
-            if (player_1.getId().equalsIgnoreCase(currentPlayerTurn)) {
-                playerOneScore++;
+            if (playerHost.getId().equalsIgnoreCase(currentPlayerTurn)) {
+                hostScore++;
             } else {
-                playerTwoScore++;
+                guestScore++;
             }
+
             return true;
         }
-        if (player_2 != null) {
+/*        if (playerGuest != null) {
             switchTurns();
         }
+        Log.d(MyUtility.LOG_TAG, "The turn was passed to "+ currentPlayerTurn);*/
         return false;
     }
 
-    private void switchTurns() {
-        if (player_1.getId().equalsIgnoreCase(currentPlayerTurn)) {
-            currentPlayerTurn = player_2.getId();
+    public void switchTurns() {
+        if (playerHost.getId().equalsIgnoreCase(currentPlayerTurn)) {
+            currentPlayerTurn = playerGuest.getId();
         } else {
-            currentPlayerTurn = player_1.getId();
+            currentPlayerTurn = playerHost.getId();
         }
     }
 
@@ -474,7 +425,7 @@ public class GameManager {
     public void setCardImageNames(ArrayList<String> names){
         cardImageNames = names;
     }
-    public void setCardInVisibility(int row, int col, boolean visible) {
+    public void setCardVisibility(int row, int col, boolean visible) {
         cardsInPlay.set(row * boardSize + col, visible);
     }
 
@@ -490,28 +441,32 @@ public class GameManager {
         return R.drawable.question_mark;
     }
 
-    public int getFacedUpCards() {
+    public int getNumberOfFacedUpCards() {
         return facedUpCards;
+    }
+
+    public boolean getCardState(int row, int col){
+        return cardFacedUp.get(row*boardSize+col);
     }
 
     public ArrayList<int[]> getFlippedCards() {
         return currentFacedUpCards;
     }
 
-    public int getPlayerOneScore() {
-        return playerOneScore;
+    public int getHostScore() {
+        return hostScore;
     }
 
-    public void setPlayerOneScore(int playerOneScore) {
-        this.playerOneScore = playerOneScore;
+    public void setHostScore(int hostScore) {
+        this.hostScore = hostScore;
     }
 
-    public int getPlayerTwoScore() {
-        return playerTwoScore;
+    public int getGuestScore() {
+        return guestScore;
     }
 
-    public void setPlayerTwoScore(int playerTwoScore) {
-        this.playerTwoScore = playerTwoScore;
+    public void setGuestScore(int guestScore) {
+        this.guestScore = guestScore;
     }
 
     public String getCurrentPlayer() {

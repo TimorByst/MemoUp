@@ -24,7 +24,6 @@ import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.ValueEventListener;
 import com.google.gson.Gson;
 
 import java.util.ArrayList;
@@ -55,53 +54,51 @@ public class Activity_Online extends AppCompatActivity {
         findViews();
         initViews();
 
-
-        databaseReference
-                .addChildEventListener(new ChildEventListener() {
-                    @Override
-                    public void onChildAdded(@NonNull DataSnapshot snapshot,
-                                             @Nullable String previousChildName) {
-                        if (!player.isCreator) {
-                            String gameSessionJson = snapshot.getValue(String.class);
-                            gameSession = new Gson().fromJson(gameSessionJson, GameSession.class);
-                            if (gameSession.getPlayerTwo() != null
-                                    && gameSession.getPlayerTwo()
-                                    .getId().equalsIgnoreCase(player.getId())) {
-                                snapshot.getRef().removeValue();
-                            } else {
-                                AddPlayerToGameSession(player);
-                            }
-                        }
+        databaseReference.addChildEventListener(new ChildEventListener() {
+            @Override
+            public void onChildAdded(@NonNull DataSnapshot snapshot,
+                                     @Nullable String previousChildName) {
+                if (!player.isCreator) {
+                    String gameSessionJson = snapshot.getValue(String.class);
+                    gameSession = new Gson().fromJson(gameSessionJson, GameSession.class);
+                    if (gameSession.getPlayerGuest() != null
+                            && gameSession.getPlayerGuest()
+                            .getId().equalsIgnoreCase(player.getId())) {
+                        snapshot.getRef().removeValue();
+                    } else {
+                        AddPlayerToGameSession(player);
                     }
+                }
+            }
 
-                    @Override
-                    public void onChildChanged(@NonNull DataSnapshot snapshot,
-                                               @Nullable String previousChildName) {
-                        if(player.isCreator){
-                            String gameSessionJson = snapshot.getValue(String.class);
-                            gameSession = new Gson().fromJson(gameSessionJson, GameSession.class);
-                            snapshot.getRef().removeValue();
-                        }
-                    }
+            @Override
+            public void onChildChanged(@NonNull DataSnapshot snapshot,
+                                       @Nullable String previousChildName) {
+                if (player.isCreator) {
+                    String gameSessionJson = snapshot.getValue(String.class);
+                    gameSession = new Gson().fromJson(gameSessionJson, GameSession.class);
+                    snapshot.getRef().removeValue();
+                }
+            }
 
-                    @Override
-                    public void onChildRemoved(@NonNull DataSnapshot snapshot) {
-                        Log.d(MyUtility.LOG_TAG, "A child hase been removed");
-                        Log.d(MyUtility.LOG_TAG, player.getUsername() + ", My board size is " + gameSession.getBoardSize());
-                        startGame();
-                    }
+            @Override
+            public void onChildRemoved(@NonNull DataSnapshot snapshot) {
+                Log.d(MyUtility.LOG_TAG, "A child hase been removed");
+                Log.d(MyUtility.LOG_TAG, player.getUsername() + ", My board size is " + gameSession.getBoardSize());
+                startGame();
+            }
 
-                    @Override
-                    public void onChildMoved(@NonNull DataSnapshot snapshot,
-                                             @Nullable String previousChildName) {
+            @Override
+            public void onChildMoved(@NonNull DataSnapshot snapshot,
+                                     @Nullable String previousChildName) {
 
-                    }
+            }
 
-                    @Override
-                    public void onCancelled(@NonNull DatabaseError error) {
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
 
-                    }
-                });
+            }
+        });
 
         if (player.isCreator) {
             gameManager = new GameManager(boardSize);
@@ -110,7 +107,7 @@ public class Activity_Online extends AppCompatActivity {
             gameSession = new GameSession();
             gameSession.setBoardSize(gameManager.getBoardSize())
                     .setCardImagesNames(gameManager.getCardImageNames())
-                    .setPlayerOne(player);
+                    .setPlayerHost(player);
 
             String gameSessionJson = new Gson().toJson(gameSession);
             firebaseDatabase.getReference(MyUtility.GAME_SESSIONS)
@@ -132,7 +129,7 @@ public class Activity_Online extends AppCompatActivity {
     }
 
     private void AddPlayerToGameSession(MyUser player) {
-        gameSession.setPlayerTwo(player);
+        gameSession.setPlayerGuest(player);
 
         String gameSessionJson = new Gson().toJson(gameSession);
         firebaseDatabase.getReference(MyUtility.GAME_SESSIONS)
@@ -227,11 +224,9 @@ public class Activity_Online extends AppCompatActivity {
     private void startGame() {
 
         //deQueue();
-        Log.d(MyUtility.LOG_TAG, player.getUsername() + " boardSize - " + boardSize);
+        Log.d(MyUtility.LOG_TAG, player.getUsername() + " boardSize - " + gameSession.getBoardSize());
         Intent intent = new Intent(this, Activity_Multiplayer.class);
-        intent.putExtra(MyUtility.BOARD_SIZE, boardSize);
         intent.putExtra(MyUtility.PLAYER_1, player);
-        intent.putExtra(MyUtility.SINGLE_PLAYER, false);
         intent.putExtra(MyUtility.GAME_SESSIONS, gameSession);
         if (player.isCreator) {
             /*online_TXT_wait.setText("Waiting for other player...");
@@ -305,7 +300,7 @@ public class Activity_Online extends AppCompatActivity {
         gameSession = new GameSession();
         gameSession.setBoardSize(gameManager.getBoardSize())
                 .setCardImagesNames(gameManager.getCardImageNames())
-                .setPlayerOne(player);
+                .setPlayerHost(player);
         String gameSessionJson = new Gson().toJson(gameSession);
         firebaseDatabase.getReference(MyUtility.GAME_SESSIONS)
                 .child(player.getSessionKey())

@@ -18,8 +18,6 @@ import androidx.appcompat.widget.AppCompatTextView;
 import com.bumptech.glide.Glide;
 import com.google.android.material.imageview.ShapeableImageView;
 
-import java.util.UUID;
-
 public class Activity_Game extends AppCompatActivity {
 
     private final int FLIP_CARD_ANIMATION_DURATION = 500;
@@ -200,7 +198,7 @@ public class Activity_Game extends AppCompatActivity {
     }
 
     private void clicked(View view, int finalI, int finalJ) {
-        if (gameManager.getFacedUpCards() == 2) {
+        if (gameManager.getNumberOfFacedUpCards() == 2) {
             return;
         }
         if (!flipInProgress) {
@@ -248,7 +246,7 @@ public class Activity_Game extends AppCompatActivity {
                     public void run() {
                         gameManager.flipCard(row, col);
                         imageView.setImageResource(gameManager.getImageResource(row, col));
-                        if (gameManager.getFacedUpCards() == 2) {
+                        if (gameManager.getNumberOfFacedUpCards() == 2) {
                             new Handler().postDelayed(new Runnable() {
                                 @Override
                                 public void run() {
@@ -288,9 +286,9 @@ public class Activity_Game extends AppCompatActivity {
                                         playSoundOnce = false;
                                     }
                                     single_player_score
-                                            .setText(gameManager.getPlayerOneScore() + "");
+                                            .setText(gameManager.getHostScore() + "");
                                     cardView.setVisibility(View.INVISIBLE);
-                                    gameManager.setCardInVisibility(row, col, !VISIBLE);
+                                    gameManager.setCardVisibility(row, col, !VISIBLE);
                                     MySignal.getInstance()
                                             .frenchToast(Math.random() < 0.5 ? "Nice!" : "Good Job!");
 //                                    gameManager.saveGameState();
