@@ -10,28 +10,18 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.google.gson.Gson;
 
-import java.util.Map;
-
 
 public class FirebaseManager {
 
-    interface OnUserLoadedListener {
-
-        void onUserLoaded(MyUser user);
-        void onError(String errorMessage);
-
-    }
-
-    interface onGameStateLoadedListener{
-        void onGameStateLoaded(Map<String, Object> gameState);
-        void onError(String errorMessage);
-    }
-
     private static FirebaseManager firebaseManager = null;
-    private FirebaseDatabase firebaseDatabase;
+    private final FirebaseDatabase firebaseDatabase;
+    private final FirebaseAuth firebaseAuth;
+    private final Gson gson = new Gson();
     private DatabaseReference databaseReference;
-    private FirebaseAuth firebaseAuth;
-    private Gson gson = new Gson();
+    private FirebaseManager() {
+        firebaseDatabase = FirebaseDatabase.getInstance();
+        firebaseAuth = FirebaseAuth.getInstance();
+    }
 
     public static void init() {
         if (firebaseManager == null) {
@@ -39,25 +29,12 @@ public class FirebaseManager {
         }
     }
 
-    public FirebaseDatabase getFirebaseDatabase() {
-        return firebaseDatabase;
-    }
-
-    public DatabaseReference getDatabaseReference() {
-        return databaseReference;
-    }
-
-    public FirebaseAuth getFirebaseAuth() {
-        return firebaseAuth;
-    }
-
     public static FirebaseManager getInstance() {
         return firebaseManager;
     }
 
-    private FirebaseManager() {
-        firebaseDatabase = FirebaseDatabase.getInstance();
-        firebaseAuth = FirebaseAuth.getInstance();
+    public FirebaseAuth getFirebaseAuth() {
+        return firebaseAuth;
     }
 
     public void saveUser(MyUser user) {
@@ -85,5 +62,13 @@ public class FirebaseManager {
                 listener.onError(databaseError.getMessage());
             }
         });
+    }
+
+    interface OnUserLoadedListener {
+
+        void onUserLoaded(MyUser user);
+
+        void onError(String errorMessage);
+
     }
 }

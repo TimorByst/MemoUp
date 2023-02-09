@@ -1,26 +1,17 @@
 package com.example.memoup;
 
-import androidx.annotation.NonNull;
-import androidx.appcompat.app.AppCompatActivity;
-
 import android.content.Intent;
 import android.os.Bundle;
-import android.util.Log;
-import android.view.View;
 
-import com.google.android.gms.tasks.OnFailureListener;
-import com.google.android.gms.tasks.OnSuccessListener;
+import androidx.appcompat.app.AppCompatActivity;
+
 import com.google.android.material.button.MaterialButton;
-import com.google.android.material.textview.MaterialTextView;
-import com.google.firebase.database.FirebaseDatabase;
 
 public class Activity_GameLevel extends AppCompatActivity {
 
     private MaterialButton boardSize_BTN_4;
     private MaterialButton boardSize_BTN_5;
     private MaterialButton boardSize_BTN_6;
-    private MaterialTextView creator_TXT;
-    private MaterialTextView headline_TXT_level;
     private MyUser player_1;
     private boolean singlePlayer;
 
@@ -53,28 +44,14 @@ public class Activity_GameLevel extends AppCompatActivity {
         stopService(serviceIntent);
     }
 
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        finish();
-    }
-
     private void findViews() {
-        creator_TXT = findViewById(R.id.creator_TXT);
-        headline_TXT_level = findViewById(R.id.headline_TXT_level);
         boardSize_BTN_4 = findViewById(R.id.boardSize_BTN_4);
         boardSize_BTN_5 = findViewById(R.id.boardSize_BTN_5);
         boardSize_BTN_6 = findViewById(R.id.boardSize_BTN_6);
     }
 
     private void initButton(MaterialButton button) {
-        button.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                clicked(button.getId());
-            }
-        });
-
+        button.setOnClickListener(view -> clicked(button.getId()));
     }
 
     private void clicked(int buttonId) {
@@ -87,15 +64,16 @@ public class Activity_GameLevel extends AppCompatActivity {
         } else {
             boardSize = 6;
         }
-        if(singlePlayer){
+        if (singlePlayer) {
             intent = new Intent(this, Activity_Game.class);
-        }else{
+        } else {
             intent = new Intent(this, Activity_Online.class);
         }
         intent.putExtra(MyUtility.PLAYER_1, player_1);
         intent.putExtra(MyUtility.SINGLE_PLAYER, singlePlayer);
         intent.putExtra(MyUtility.BOARD_SIZE, boardSize);
         startActivity(intent);
+        finish();
     }
 
     @Override

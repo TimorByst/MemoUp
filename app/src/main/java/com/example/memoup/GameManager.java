@@ -5,16 +5,8 @@ import android.media.MediaPlayer;
 import android.net.Uri;
 import android.util.Log;
 
-import androidx.annotation.NonNull;
-
-import com.google.android.gms.tasks.OnFailureListener;
-import com.google.android.gms.tasks.OnSuccessListener;
-import com.google.firebase.database.DataSnapshot;
-import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.GenericTypeIndicator;
-import com.google.firebase.database.ValueEventListener;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -24,6 +16,10 @@ import java.util.List;
 import java.util.Map;
 
 public class GameManager {
+    /*Used to map image name to its R.drawable.image*/
+    private final Map<String, Integer> images = new HashMap<>();
+    /*Used to map sound resources to their names*/
+    private final Map<String, Integer> sounds = new HashMap<>();
     /*The size of the game board*/
     private int boardSize;
     /*The number of cards that are currently facing up*/
@@ -36,8 +32,6 @@ public class GameManager {
     private int guestScore = 0;
     /*Used to indicate if a card is faced up or down (true - up, false - down)*/
     private ArrayList<Boolean> cardFacedUp;
-    /*Used to indicate if a card is in play or not*/
-    private ArrayList<Boolean> cardsInPlay;
     /*Used to hold the current faced up cards indexes*/
     private ArrayList<int[]> currentFacedUpCards = new ArrayList<int[]>() {
         {
@@ -51,10 +45,6 @@ public class GameManager {
     private String gameId;
     /*Used to hold the image location on board*/
     private ArrayList<String> cardImageNames;
-    /*Used to map image name to its R.drawable.image*/
-    private final Map<String, Integer> images = new HashMap<>();
-    /*Used to map sound resources to their names*/
-    private final Map<String, Integer> sounds = new HashMap<>();
     private FirebaseDatabase firebaseDatabase = FirebaseDatabase.getInstance();
     private DatabaseReference databaseReference;
     private MyUser playerHost;
@@ -63,18 +53,8 @@ public class GameManager {
     private String currentPlayerTurn;
     private MediaPlayer mediaPlayer;
 
-    public MyUser getPlayerHost() {
-        return playerHost;
-    }
-
-    public MyUser getPlayerGuest() {
-        return playerGuest;
-    }
-
-
-    public  GameManager() {
+    public GameManager() {
     }// Default Constructor
-
 
     public GameManager(int boardSize, MyUser host, MyUser guest, ArrayList<String> cardImageNames) {
         gameId = host.getSessionKey();
@@ -87,7 +67,7 @@ public class GameManager {
         this.cardImageNames = cardImageNames;
         setCurrentPlayer(host.getId());
         //setGameStateEventListener();
-        saveGameState();
+        createPlayerMoveEntry();
     }
 
 
@@ -100,6 +80,7 @@ public class GameManager {
 
         gameId = player.getSessionKey();
         playerHost = player;
+        currentPlayerTurn = player.getId();
         this.boardSize = boardSize;
         firebaseDatabase = FirebaseDatabase.getInstance();
         initBoard();
@@ -108,8 +89,17 @@ public class GameManager {
         randomizeImageLocations();
     }
 
-    public GameManager(int boardSize){
+
+    public GameManager(int boardSize) {
         this.boardSize = boardSize;
+    }
+
+    public MyUser getPlayerHost() {
+        return playerHost;
+    }
+
+    public MyUser getPlayerGuest() {
+        return playerGuest;
     }
 
     /**
@@ -117,7 +107,6 @@ public class GameManager {
      */
     private void initBoard() {
         cardFacedUp = new ArrayList<>(Collections.nCopies(boardSize * boardSize, false));
-        cardsInPlay = new ArrayList<>(Collections.nCopies(boardSize * boardSize, true));
         cardImageNames = new ArrayList<>();
     }
 
@@ -204,97 +193,14 @@ public class GameManager {
         }
     }
 
-    public void saveGameState() {
+    public void createPlayerMoveEntry() {
         databaseReference = firebaseDatabase.getReference(MyUtility.GAMES);
-        Map<String, Object> gameState = toMap();
-        databaseReference.child(gameId).setValue(gameState)
-                .addOnSuccessListener(new OnSuccessListener<Void>() {
-                    @Override
-                    public void onSuccess(Void unused) {
-                        Log.d(MyUtility.LOG_TAG, "gameState have been successfully saved");
-                    }
-                })
-                .addOnFailureListener(new OnFailureListener() {
-                    @Override
-                    public void onFailure(@NonNull Exception e) {
-                        Log.d(MyUtility.LOG_TAG, "Couldn't save gameState");
-                    }
-                });
-    }
-
-    private void setGameStateEventListener() {
-        databaseReference = firebaseDatabase.getReference(MyUtility.GAMES);
-
-        databaseReference.child(gameId).addValueEventListener(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                if (dataSnapshot.exists()) {
-                    GenericTypeIndicator<Map<String, Object>> typeIndicator = new GenericTypeIndicator<Map<String, Object>>() {
-                    };
-                    Map<String, Object> gameState = dataSnapshot.getValue(typeIndicator);
-                    toObject(gameState);
-                    Log.d(MyUtility.LOG_TAG, "gameState loaded successfully");
-                }
-            }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError error) {
-                Log.e(MyUtility.LOG_TAG, "Couldn't load gameState: " + error);
-            }
-        });
-    }
-
-    private Map<String, Object> toMap() {
-        Map<String, Object> gameState = new HashMap<>();
-        gameState.put("PlayerMove", "0");
-        gameState.put("cardFacedUp", cardFacedUp);
-        gameState.put("cardsInPlay", cardsInPlay);
-        gameState.put("guestScore", guestScore);
-        gameState.put("hostScore", hostScore);
-        gameState.put("currentPlayerTurn", currentPlayerTurn);
-        gameState.put("matchesFound", matchesFound);
-        return gameState;
-    }
-
-    private void toObject(Map<String, Object> gameState) {
-        cardFacedUp = (ArrayList<Boolean>) gameState.get("cardFacedUp");
-        if (cardsInPlay == null) {
-            Log.e(MyUtility.LOG_TAG, "Error while trying to load data to gameManager. List of cards in play is null.");
-            return;
-        }
-        cardsInPlay = (ArrayList<Boolean>) gameState.get("cardsInPlay");
-        if (cardsInPlay == null) {
-            Log.e(MyUtility.LOG_TAG, "Error while trying to load data to gameManager. List of cards in play is null.");
-            return;
-        }
-
-        Long playerOneScore = (Long) gameState.get("playerOneScore");
-        if (playerOneScore == null) {
-            Log.e(MyUtility.LOG_TAG, "Error while trying to load data to gameManager. Player one score is null.");
-            return;
-        }
-        this.hostScore = playerOneScore.intValue();
-
-        Long playerTwoScore = (Long) gameState.get("playerTwoScore");
-        if (playerTwoScore == null) {
-            Log.e(MyUtility.LOG_TAG, "Error while trying to load data to gameManager. Player two score is null.");
-            return;
-        }
-        this.guestScore = playerTwoScore.intValue();
-
-        String currentPlayerTurn = (String) gameState.get("currentPlayerTurn");
-        if (currentPlayerTurn == null) {
-            Log.e(MyUtility.LOG_TAG, "Error while trying to load data to gameManager. Current player turn is null.");
-            return;
-        }
-        this.currentPlayerTurn = currentPlayerTurn;
-
-        Long matchesFound = (Long) gameState.get("matchesFound");
-        if (matchesFound == null) {
-            Log.e(MyUtility.LOG_TAG, "Error while trying to load data to gameManager. Matches found is null.");
-            return;
-        }
-        this.matchesFound = matchesFound.intValue();
+        databaseReference.child(gameId).child(MyUtility.PLAYER_MOVE).setValue("start")
+                .addOnSuccessListener(
+                        unused -> Log.d(
+                                MyUtility.LOG_TAG, "gameState have been successfully saved"))
+                .addOnFailureListener(
+                        e -> Log.d(MyUtility.LOG_TAG, "Couldn't save gameState"));
     }
 
     /**
@@ -312,10 +218,6 @@ public class GameManager {
         } else {
             facedUpCards--;
         }
-    }
-
-    public String getComparisonCard() {
-        return comparisonCard;
     }
 
     /**
@@ -338,10 +240,10 @@ public class GameManager {
 
             return true;
         }
-/*        if (playerGuest != null) {
+        if (playerGuest != null) {
             switchTurns();
+            Log.d(MyUtility.LOG_TAG, "The turn was passed to " + currentPlayerTurn);
         }
-        Log.d(MyUtility.LOG_TAG, "The turn was passed to "+ currentPlayerTurn);*/
         return false;
     }
 
@@ -390,7 +292,8 @@ public class GameManager {
         if (imageResource != null) {
             return imageResource;
         } else {
-            throw new NullPointerException(cardImageNames.get(row * boardSize + col) + " doesn't exists in images");
+            throw new NullPointerException(cardImageNames.get(row * boardSize + col)
+                    + " doesn't exists in images");
         }
     }
 
@@ -421,12 +324,8 @@ public class GameManager {
         }
     }
 
-    public ArrayList<String> getCardImageNames(){return cardImageNames;}
-    public void setCardImageNames(ArrayList<String> names){
-        cardImageNames = names;
-    }
-    public void setCardVisibility(int row, int col, boolean visible) {
-        cardsInPlay.set(row * boardSize + col, visible);
+    public ArrayList<String> getCardImageNames() {
+        return cardImageNames;
     }
 
     public String getGameId() {
@@ -445,10 +344,6 @@ public class GameManager {
         return facedUpCards;
     }
 
-    public boolean getCardState(int row, int col){
-        return cardFacedUp.get(row*boardSize+col);
-    }
-
     public ArrayList<int[]> getFlippedCards() {
         return currentFacedUpCards;
     }
@@ -457,16 +352,8 @@ public class GameManager {
         return hostScore;
     }
 
-    public void setHostScore(int hostScore) {
-        this.hostScore = hostScore;
-    }
-
     public int getGuestScore() {
         return guestScore;
-    }
-
-    public void setGuestScore(int guestScore) {
-        this.guestScore = guestScore;
     }
 
     public String getCurrentPlayer() {

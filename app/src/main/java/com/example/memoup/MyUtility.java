@@ -13,7 +13,7 @@ public class MyUtility {
     public static final String GAME_SESSIONS = "GAME_SESSIONS";
     public static final String GAMES = "GAMES";
     public static final String USERS = "USERS";
-    public static final String QUEUE = "QUEUE";
+    public static final String PLAYER_MOVE = "PlayerMove";
     public static final String IS_CREATOR = "IS_CREATOR";
     public static final String SINGLE_PLAYER = "SINGLE_PLAYER";
     public static final String BOARD_SIZE = "BOARD_SIZE";

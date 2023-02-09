@@ -1,17 +1,14 @@
 package com.example.memoup;
 
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.widget.AppCompatImageView;
-
-import android.app.Activity;
 import android.content.Intent;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.view.View;
-import android.view.WindowManager;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
+
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.AppCompatImageView;
 
 import com.bumptech.glide.Glide;
 import com.google.android.material.textview.MaterialTextView;
@@ -26,8 +23,6 @@ public class Activity_Splash extends AppCompatActivity {
     private Animation slide_left_to_right;
     private Animation slide_right_to_left;
     private Animation fade_in;
-    private final String CREATOR_NAME = "By Beast Games ltd. ©";
-    private final String APP_NAME = "MemoUp";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -48,7 +43,9 @@ public class Activity_Splash extends AppCompatActivity {
     }
 
     private void initViews() {
+        String CREATOR_NAME = "By Beast Games ltd. ©";
         splash_TXT_creator.setText(CREATOR_NAME);
+        String APP_NAME = "MemoUp";
         splash_TXT_name.setText(APP_NAME);
         Glide.with(this).load(R.drawable.memo_up_logo).into(splash_IMG_logo);
 
@@ -80,12 +77,7 @@ public class Activity_Splash extends AppCompatActivity {
     }
 
     private void playSplashAnimationWithDelay() {
-        new Handler().postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                playSplashAnimation();
-            }
-        }, DELAY_SPLASH_START);
+        new Handler().postDelayed(this::playSplashAnimation, DELAY_SPLASH_START);
     }
 
     void playSplashAnimation() {

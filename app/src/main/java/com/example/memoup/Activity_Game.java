@@ -20,6 +20,9 @@ import com.google.android.material.imageview.ShapeableImageView;
 
 public class Activity_Game extends AppCompatActivity {
 
+    public interface CallbackTimer {
+        void tick();
+    }
     private final int FLIP_CARD_ANIMATION_DURATION = 500;
     private final int TICK_SPEED = 1000;
     private final String GAME_START = "game_start";
@@ -219,6 +222,7 @@ public class Activity_Game extends AppCompatActivity {
 
     private void endGame() {
         player.gameOver(false, true);
+        FirebaseManager.getInstance().saveUser(player);
         playEndGameAnimation();
     }
 
@@ -288,10 +292,8 @@ public class Activity_Game extends AppCompatActivity {
                                     single_player_score
                                             .setText(gameManager.getHostScore() + "");
                                     cardView.setVisibility(View.INVISIBLE);
-                                    gameManager.setCardVisibility(row, col, !VISIBLE);
                                     MySignal.getInstance()
                                             .frenchToast(Math.random() < 0.5 ? "Nice!" : "Good Job!");
-//                                    gameManager.saveGameState();
                                 } else {
                                     if (playSoundOnce) {
                                         gameManager.playGameSound(TWO_CARD_FLIP,
@@ -344,9 +346,5 @@ public class Activity_Game extends AppCompatActivity {
         if (hasFocus) {
             MyUtility.hideSystemUI(this);
         }
-    }
-
-    public interface CallbackTimer {
-        void tick();
     }
 }

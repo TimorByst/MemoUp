@@ -29,8 +29,6 @@ class MyAnimationListener implements Animation.AnimationListener {
         if(nextAnimation != null){
             if(nextView.getVisibility() == View.INVISIBLE){
                 nextView.setVisibility(View.VISIBLE);
-            }else{
-                nextView.setVisibility(View.INVISIBLE);
             }
             nextView.startAnimation(nextAnimation);
         }

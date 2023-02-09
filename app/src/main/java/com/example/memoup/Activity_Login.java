@@ -1,20 +1,17 @@
 package com.example.memoup;
 
-import androidx.activity.result.ActivityResultCallback;
-import androidx.activity.result.ActivityResultLauncher;
-import androidx.appcompat.app.AlertDialog;
-import androidx.appcompat.app.AppCompatActivity;
-
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 import android.text.InputType;
 import android.util.Log;
 import android.widget.EditText;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.app.AppCompatActivity;
+
 import com.firebase.ui.auth.AuthUI;
 import com.firebase.ui.auth.FirebaseAuthUIActivityResultContract;
-import com.firebase.ui.auth.IdpResponse;
 import com.firebase.ui.auth.data.model.FirebaseAuthUIAuthenticationResult;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
@@ -47,12 +44,13 @@ public class Activity_Login extends AppCompatActivity {
                                     .setGamesPlayedMulti(user.getGamesPlayedMulti())
                                     .setGamesPlayedSolo(user.getGamesPlayedSolo())
                                     .setWins(user.getWins());
-                            Log.d(MyUtility.LOG_TAG, myUser.getUsername() + " is now online");
+                            Log.d(MyUtility.LOG_TAG, myUser.getUsername() + " is now online " + myUser.getGamesPlayedMulti());
                             Intent intent = new Intent(Activity_Login.this,
                                     Activity_MainMenu.class);
                             intent.putExtra(MyUtility.PLAYER_1, myUser);
                             startActivity(intent);
                             Log.d(MyUtility.LOG_TAG, "User loaded successfully");
+                            finish();
                         }
 
 
@@ -80,12 +78,6 @@ public class Activity_Login extends AppCompatActivity {
         stopService(serviceIntent);
     }
 
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        finish();
-    }
-
     private void prettyLogin() {
         List<AuthUI.IdpConfig> providers = Arrays.asList(
                 new AuthUI.IdpConfig.EmailBuilder().build(),
@@ -101,24 +93,12 @@ public class Activity_Login extends AppCompatActivity {
         signInLauncher.launch(signInIntent);
     }
 
-    private final ActivityResultLauncher<Intent> signInLauncher = registerForActivityResult(
-            new FirebaseAuthUIActivityResultContract(),
-            new ActivityResultCallback<FirebaseAuthUIAuthenticationResult>() {
-                @Override
-                public void onActivityResult(FirebaseAuthUIAuthenticationResult result) {
-                    onSignInResult(result);
-                }
-            }
-    );
-
     private void onSignInResult(FirebaseAuthUIAuthenticationResult result) {
-        IdpResponse response = result.getIdpResponse();
         if (result.getResultCode() == RESULT_OK) {
             FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+            assert user != null;
             myUser = new MyUser(user.getUid());
             showUsernameDialog();
-
-
         } else {
             prettyLogin();
         }
@@ -132,21 +112,22 @@ public class Activity_Login extends AppCompatActivity {
         input.setInputType(InputType.TYPE_CLASS_TEXT);
         builder.setView(input);
 
-        builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                myUser.setUsername(input.getText().toString());
-                firebaseManager.saveUser(myUser);
-                Intent intent = new Intent(Activity_Login.this, Activity_MainMenu.class);
-                intent.putExtra(MyUtility.PLAYER_1, myUser);
-                startActivity(intent);
-            }
+        builder.setPositiveButton("OK", (dialog, which) -> {
+            myUser.setUsername(input.getText().toString());
+            firebaseManager.saveUser(myUser);
+            Intent intent = new Intent(Activity_Login.this, Activity_MainMenu.class);
+            intent.putExtra(MyUtility.PLAYER_1, myUser);
+            startActivity(intent);
+            finish();
         });
         builder.setNegativeButton("Cancel", null);
 
         AlertDialog dialog = builder.create();
         dialog.show();
-    }
+    }    private final ActivityResultLauncher<Intent> signInLauncher = registerForActivityResult(
+            new FirebaseAuthUIActivityResultContract(),
+            this::onSignInResult
+    );
 
     @Override
     public void onWindowFocusChanged(boolean hasFocus) {
@@ -155,6 +136,8 @@ public class Activity_Login extends AppCompatActivity {
             MyUtility.hideSystemUI(this);
         }
     }
+
+
 
 
 }
