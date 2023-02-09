@@ -1,24 +1,18 @@
 package com.example.memoup;
 
-import androidx.activity.result.ActivityResultCallback;
-import androidx.activity.result.ActivityResultLauncher;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.widget.AppCompatImageView;
-
-import android.app.Activity;
 import android.content.Intent;
-import android.os.Build;
 import android.os.Bundle;
-import android.view.View;
-import android.view.WindowManager;
+import android.text.InputType;
+import android.util.Log;
 import android.widget.EditText;
 
-import com.bumptech.glide.Glide;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.app.AppCompatActivity;
+
 import com.firebase.ui.auth.AuthUI;
 import com.firebase.ui.auth.FirebaseAuthUIActivityResultContract;
 import com.firebase.ui.auth.data.model.FirebaseAuthUIAuthenticationResult;
-import com.google.android.material.textfield.TextInputLayout;
-import com.google.android.material.textview.MaterialTextView;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 
@@ -27,35 +21,64 @@ import java.util.List;
 
 public class Activity_Login extends AppCompatActivity {
 
-    private EditText password_TXT_login;
-    private EditText username_TXT_login;
-    private MaterialTextView headline_TXT_login;
-    private AppCompatImageView avatar_IMG_login;
-    private FirebaseAuth myAuth;
+    private FirebaseManager firebaseManager;
+    private MyUser myUser;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        MyUtility.hideSystemUI(this);
         setContentView(R.layout.activity_login);
-        hideSystemUI(this);
-        findViews();
-        initViews();
+        firebaseManager = FirebaseManager.getInstance();
 
-        myAuth = FirebaseAuth.getInstance();
-        FirebaseUser user = myAuth.getCurrentUser();
-
-        if(user == null){
+        FirebaseUser user = firebaseManager.getFirebaseAuth().getCurrentUser();
+        if (user == null) {
             prettyLogin();
-        }else{
-            // TO DO
-            // add logic for known user
+        } else {
+            myUser = new MyUser(user.getUid());
+            firebaseManager.loadUser(user.getUid(),
+                    new FirebaseManager.OnUserLoadedListener() {
+                        @Override
+                        public void onUserLoaded(MyUser user) {
+                            myUser.setUsername(user.getUsername())
+                                    .setGamesPlayedMulti(user.getGamesPlayedMulti())
+                                    .setGamesPlayedSolo(user.getGamesPlayedSolo())
+                                    .setWins(user.getWins());
+                            Log.d(MyUtility.LOG_TAG, myUser.getUsername() + " is now online " + myUser.getGamesPlayedMulti());
+                            Intent intent = new Intent(Activity_Login.this,
+                                    Activity_MainMenu.class);
+                            intent.putExtra(MyUtility.PLAYER_1, myUser);
+                            startActivity(intent);
+                            Log.d(MyUtility.LOG_TAG, "User loaded successfully");
+                            finish();
+                        }
+
+
+                        @Override
+                        public void onError(String errorMessage) {
+                            Log.e(MyUtility.LOG_TAG,
+                                    "Error while trying to read user from the database");
+                        }
+                    }
+            );
         }
-
-
-
     }
 
-    private void prettyLogin(){
+    @Override
+    protected void onResume() {
+        super.onResume();
+        Intent serviceIntent = new Intent(this, MyMusicService.class);
+        startService(serviceIntent);
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        Intent serviceIntent = new Intent(this, MyMusicService.class);
+        stopService(serviceIntent);
+    }
+
+    private void prettyLogin() {
         List<AuthUI.IdpConfig> providers = Arrays.asList(
                 new AuthUI.IdpConfig.EmailBuilder().build(),
                 new AuthUI.IdpConfig.PhoneBuilder().build(),
@@ -70,59 +93,51 @@ public class Activity_Login extends AppCompatActivity {
         signInLauncher.launch(signInIntent);
     }
 
-    private final ActivityResultLauncher<Intent> signInLauncher = registerForActivityResult(
-            new FirebaseAuthUIActivityResultContract(),
-            new ActivityResultCallback<FirebaseAuthUIAuthenticationResult>() {
-                @Override
-                public void onActivityResult(FirebaseAuthUIAuthenticationResult result) {
-                    onSignInResult(result);
-                }
-            }
-    );
-
     private void onSignInResult(FirebaseAuthUIAuthenticationResult result) {
+        if (result.getResultCode() == RESULT_OK) {
+            FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+            assert user != null;
+            myUser = new MyUser(user.getUid());
+            showUsernameDialog();
+        } else {
+            prettyLogin();
+        }
     }
 
-    private void findViews(){
-        password_TXT_login = findViewById(R.id.password_TXT_login);
-        username_TXT_login = findViewById(R.id.username_TXT_login);
-        headline_TXT_login = findViewById(R.id.headline_TXT_login);
-        avatar_IMG_login = findViewById(R.id.avatar_IMG_login);
-    }
+    private void showUsernameDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Enter username");
 
-    private void initViews(){
-        Glide.with(this).load(R.drawable.user_default_avatar).into(avatar_IMG_login);
-    }
+        final EditText input = new EditText(this);
+        input.setInputType(InputType.TYPE_CLASS_TEXT);
+        builder.setView(input);
+
+        builder.setPositiveButton("OK", (dialog, which) -> {
+            myUser.setUsername(input.getText().toString());
+            firebaseManager.saveUser(myUser);
+            Intent intent = new Intent(Activity_Login.this, Activity_MainMenu.class);
+            intent.putExtra(MyUtility.PLAYER_1, myUser);
+            startActivity(intent);
+            finish();
+        });
+        builder.setNegativeButton("Cancel", null);
+
+        AlertDialog dialog = builder.create();
+        dialog.show();
+    }    private final ActivityResultLauncher<Intent> signInLauncher = registerForActivityResult(
+            new FirebaseAuthUIActivityResultContract(),
+            this::onSignInResult
+    );
 
     @Override
     public void onWindowFocusChanged(boolean hasFocus) {
         super.onWindowFocusChanged(hasFocus);
         if (hasFocus) {
-            hideSystemUI(this);
+            MyUtility.hideSystemUI(this);
         }
     }
 
-    public static void hideSystemUI(Activity activity) {
-        // Enables regular immersive mode.
-        // For "lean back" mode, remove SYSTEM_UI_FLAG_IMMERSIVE.
-        // Or for "sticky immersive," replace it with SYSTEM_UI_FLAG_IMMERSIVE
-        View decorView = activity.getWindow().getDecorView();
-        decorView.setSystemUiVisibility(
-                View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
-                        // Set the content to appear under the system bars so that the
-                        // content doesn't resize when the system bars hide and show.
-                        | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-                        | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-                        | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-                        // Hide the nav bar and status bar
-                        | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-                        | View.SYSTEM_UI_FLAG_FULLSCREEN
-                        // Dim the Status and Navigation Bars
-                        | View.SYSTEM_UI_FLAG_LOW_PROFILE);
 
-        // Without - cut out display
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            activity.getWindow().getAttributes().layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES;
-        }
-    }
+
+
 }

@@ -2,7 +2,11 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.VIBRATE" />
+
     <application
+        android:name=".MyApp"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
@@ -13,7 +17,38 @@
         android:theme="@style/Theme.MemoUp"
         tools:targetApi="31">
         <activity
-            android:name=".Activity_CreateUser"
+            android:name=".Activity_Multiplayer"
+            android:screenOrientation="portrait"
+            android:exported="false"/>
+        <activity
+            android:name=".Activity_OnlineGameMenu"
+            android:screenOrientation="portrait"
+            android:exported="false" />
+        <activity
+            android:name=".Activity_Online"
+            android:screenOrientation="portrait"
+            android:exported="false">
+            <meta-data
+                android:name="android.app.lib_name"
+                android:value="" />
+        </activity>
+
+        <service
+            android:name=".MyMusicService"
+            android:enabled="true"
+            android:exported="false" />
+
+        <activity
+            android:name=".Activity_Game"
+            android:screenOrientation="portrait"
+            android:exported="false">
+            <meta-data
+                android:name="android.app.lib_name"
+                android:value="" />
+        </activity>
+        <activity
+            android:name=".Activity_GameLevel"
+            android:screenOrientation="portrait"
             android:exported="false">
             <meta-data
                 android:name="android.app.lib_name"
@@ -21,8 +56,16 @@
         </activity>
         <activity
             android:name=".Activity_Login"
-            android:exported="true"
-            android:screenOrientation="portrait">
+            android:screenOrientation="portrait"
+            android:exported="false">
+            <meta-data
+                android:name="android.app.lib_name"
+                android:value="" />
+        </activity>
+        <activity
+            android:name=".Activity_Splash"
+            android:screenOrientation="portrait"
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -34,24 +77,9 @@
                 android:value="" />
         </activity>
         <activity
-            android:name=".Activity_Splash"
-            android:exported="true"
-            android:screenOrientation="portrait">
-
-            <!-- <intent-filter> -->
-            <!-- <action android:name="android.intent.action.MAIN" /> -->
-
-
-            <!-- <category android:name="android.intent.category.LAUNCHER" /> -->
-            <!-- </intent-filter> -->
-            <meta-data
-                android:name="android.app.lib_name"
-                android:value="" />
-        </activity>
-        <activity
-            android:name=".Activity_Main"
-            android:exported="true"
-            android:screenOrientation="portrait">
+            android:name=".Activity_MainMenu"
+            android:screenOrientation="portrait"
+            android:exported="false">
             <meta-data
                 android:name="android.app.lib_name"
                 android:value="" />

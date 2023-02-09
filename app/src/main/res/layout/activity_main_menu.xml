@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".Activity_MainMenu"
+    android:background="@drawable/memo_up_background">
+
+    <com.google.android.material.textview.MaterialTextView
+        android:id="@+id/headline_TXT_level"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="MemoUp"
+        android:textStyle="bold"
+        android:textSize="50sp"
+        android:layout_centerHorizontal="true"
+        android:paddingTop="20dp"/>
+
+    <LinearLayout
+        android:id="@+id/mainMenu"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerInParent="true"
+        android:orientation="vertical">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/online_BTN_mainMenu"
+            android:layout_width="250dp"
+            android:layout_height="50dp"
+            android:layout_margin="20dp"
+            android:layout_weight="1"
+            android:background="@drawable/memo_up_card_background"
+            android:gravity="center"
+            android:text="Online"
+            android:textSize="20sp"/>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/solo_BTN_mainMenu"
+            android:layout_width="250dp"
+            android:layout_height="50dp"
+            android:layout_margin="20dp"
+            android:layout_weight="1"
+            android:background="@drawable/memo_up_card_background"
+            android:gravity="center"
+            android:text="Solo"
+            android:textSize="20sp"/>
+
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/profile_BTN_mainMenu"
+            android:layout_width="250dp"
+            android:layout_height="50dp"
+            android:layout_margin="20dp"
+            android:layout_weight="1"
+            android:background="@drawable/memo_up_card_background"
+            android:gravity="center"
+            android:text="Profile"
+            android:textSize="20sp"/>
+    </LinearLayout>
+
+    <com.google.android.material.textview.MaterialTextView
+        android:id="@+id/creator_TXT"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:layout_alignParentBottom="true"
+        android:text="@string/by_beast_games_ltd"
+        android:paddingBottom="10dp"
+        android:textSize="15sp"/>
+
+</RelativeLayout>

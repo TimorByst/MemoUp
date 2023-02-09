@@ -1,17 +1,17 @@
 <resources>
     <string name="app_name">MemoUp</string>
-    <string name="title_activity_login">Activity_Login</string>
-    <string name="prompt_email">Email</string>
-    <string name="prompt_password">Password</string>
-    <string name="action_sign_in">Sign in or register</string>
-    <string name="action_sign_in_short">Sign in</string>
-    <string name="welcome">"Welcome !"</string>
-    <string name="invalid_username">Not a valid username</string>
-    <string name="invalid_password">Password must be >5 characters</string>
-    <string name="login_failed">"Login failed"</string>
     <string name="memoup">MemoUp</string>
     <string name="by_beast_games_ltd">By Beast Games ltd. ©</string>
-    <string name="username">Username</string>
-    <string name="password">Password</string>
-    <string name="login">Login</string>
+    <string name="board_size">Board Size</string>
+    <string name="_6x6">6X6</string>
+    <string name="_5x5">5x5</string>
+    <string name="_4x4">4x4</string>
+    <string name="player_1">Player 1</string>
+    <string name="win_rate_0">Win rate: 0</string>
+    <string name="score_0">Score: 0</string>
+    <string name="_00_00">00:00</string>
+    <string name="_0">0</string>
+    <string name="player_2">Player 2</string>
+    <string name="win_rate_0_2">Win rate: 0</string>
+    <string name="score_0_2">Score: 0</string>
 </resources>
