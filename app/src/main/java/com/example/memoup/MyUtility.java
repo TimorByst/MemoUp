@@ -7,17 +7,14 @@ import android.view.WindowManager;
 
 public class MyUtility {
 
-    public static final String PLAYER_1 = "PLAYER_1";
-    public static final String PLAYER_2 = "PLAYER_2";
+    public static final String PLAYER = "PLAYER";
     public static final String LOG_TAG = "MEMO_UP";
     public static final String GAME_SESSIONS = "GAME_SESSIONS";
     public static final String GAMES = "GAMES";
     public static final String USERS = "USERS";
     public static final String PLAYER_MOVE = "PlayerMove";
-    public static final String IS_CREATOR = "IS_CREATOR";
     public static final String SINGLE_PLAYER = "SINGLE_PLAYER";
     public static final String BOARD_SIZE = "BOARD_SIZE";
-    public static final String GAME_SIZE = "GAME_SIZE";
 
     public static void hideSystemUI(Activity activity) {
         // Enables regular immersive mode.
@@ -39,7 +36,10 @@ public class MyUtility {
 
         // Without - cut out display
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            activity.getWindow().getAttributes().layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES;
+            activity.getWindow().
+                    getAttributes()
+                    .layoutInDisplayCutoutMode
+                    = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES;
         }
     }
 }

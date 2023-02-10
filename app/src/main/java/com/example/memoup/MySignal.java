@@ -13,19 +13,20 @@ public class MySignal {
     private static MySignal mySignal = null;
     private Context context;
 
-    public static void init(Context context){
-        if(mySignal == null)
-            mySignal = new MySignal(context);
-    }
-    private MySignal(Context context){
+    private MySignal(Context context) {
         this.context = context;
     }
 
-    public static MySignal getInstance(){
+    public static void init(Context context) {
+        if (mySignal == null)
+            mySignal = new MySignal(context);
+    }
+
+    public static MySignal getInstance() {
         return mySignal;
     }
 
-    public void frenchToast(String milk){
+    public void frenchToast(String milk) {
         Toast.makeText(context, milk, Toast.LENGTH_SHORT).show();
     }
 

@@ -5,14 +5,13 @@ import android.os.Bundle;
 import android.util.Log;
 
 import androidx.appcompat.app.AppCompatActivity;
-
-import com.google.android.material.button.MaterialButton;
+import androidx.appcompat.widget.AppCompatButton;
 
 public class Activity_MainMenu extends AppCompatActivity {
 
-    private MaterialButton profile_BTN_mainMenu;
-    private MaterialButton solo_BTN_mainMenu;
-    private MaterialButton online_BTN_mainMenu;
+    private AppCompatButton profile_BTN_mainMenu;
+    private AppCompatButton solo_BTN_mainMenu;
+    private AppCompatButton online_BTN_mainMenu;
     private MyUser player_1;
 
     @Override
@@ -23,7 +22,7 @@ public class Activity_MainMenu extends AppCompatActivity {
         startService(serviceIntent);
         setContentView(R.layout.activity_main_menu);
         Intent previous = getIntent();
-        player_1 = (MyUser) previous.getSerializableExtra(MyUtility.PLAYER_1);
+        player_1 = (MyUser) previous.getSerializableExtra(MyUtility.PLAYER);
         Log.d(MyUtility.LOG_TAG, player_1.getUsername() + " Is online");
         findViews();
         initButton(profile_BTN_mainMenu);
@@ -51,8 +50,14 @@ public class Activity_MainMenu extends AppCompatActivity {
         online_BTN_mainMenu = findViewById(R.id.online_BTN_mainMenu);
     }
 
-    private void initButton(MaterialButton button) {
+    private void initButton(AppCompatButton button) {
         button.setOnClickListener(view -> clicked(button.getId()));
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        finish();
     }
 
     private void clicked(int buttonId) {
@@ -63,10 +68,12 @@ public class Activity_MainMenu extends AppCompatActivity {
             intent = new Intent(this, Activity_OnlineGameMenu.class);
         } else if (buttonId == solo_BTN_mainMenu.getId()) {
             intent = new Intent(this, Activity_GameLevel.class);
-        } else {
+        } else if (buttonId == profile_BTN_mainMenu.getId()){
+            intent = new Intent(this, Activity_Profile.class);
+        }else{
             return;
         }
-        intent.putExtra(MyUtility.PLAYER_1, player_1);
+        intent.putExtra(MyUtility.PLAYER, player_1);
         intent.putExtra(MyUtility.SINGLE_PLAYER, solo);
         startActivity(intent);
     }

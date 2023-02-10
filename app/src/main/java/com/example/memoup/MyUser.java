@@ -4,19 +4,21 @@ import java.io.Serializable;
 
 public class MyUser implements Serializable {
 
+    public boolean isCreator;
     private String id;
     private String username;
     private String sessionKey;
+    private int userImageResource = 0;
     private int wins = 0;
     private int gamesPlayedSolo = 0;
     private int gamesPlayedMulti = 0;
-    public boolean isCreator;
+    private String bestTime = "--:--";
 
     public MyUser() {
     } //Default constructor
 
     public MyUser(String id) {
-        if(id == null){
+        if (id == null) {
             return;
         }
         this.id = id;
@@ -68,6 +70,28 @@ public class MyUser implements Serializable {
 
     public void setSessionKey(String sessionKey) {
         this.sessionKey = sessionKey;
+    }
+
+    public String getBestTime() {
+        return bestTime;
+    }
+
+    public MyUser setBestTime(String bestTime) {
+        if (bestTime == null) {
+            bestTime = "--:--";
+        } else {
+            this.bestTime = bestTime;
+        }
+        return this;
+    }
+
+    public int getUserImageResource() {
+        return userImageResource;
+    }
+
+    public MyUser setUserImageResource(int userImageResource) {
+        this.userImageResource = userImageResource;
+        return this;
     }
 
     public void gameOver(boolean singlePlayer, boolean won) {

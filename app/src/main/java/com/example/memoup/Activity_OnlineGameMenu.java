@@ -6,13 +6,12 @@ import android.util.Log;
 import android.widget.EditText;
 
 import androidx.appcompat.app.AppCompatActivity;
-
-import com.google.android.material.button.MaterialButton;
+import androidx.appcompat.widget.AppCompatButton;
 
 public class Activity_OnlineGameMenu extends AppCompatActivity {
 
-    private MaterialButton online_BTN_create;
-    private MaterialButton online_BTN_join;
+    private AppCompatButton online_BTN_create;
+    private AppCompatButton online_BTN_join;
     private EditText online_TXT_code;
     private String code = "null";
     private MyUser player;
@@ -25,7 +24,7 @@ public class Activity_OnlineGameMenu extends AppCompatActivity {
         startService(serviceIntent);
         setContentView(R.layout.activity_online_game_menu);
         Intent previous = getIntent();
-        player = (MyUser) previous.getSerializableExtra(MyUtility.PLAYER_1);
+        player = (MyUser) previous.getSerializableExtra(MyUtility.PLAYER);
         findViews();
         initViews();
     }
@@ -49,14 +48,18 @@ public class Activity_OnlineGameMenu extends AppCompatActivity {
         initButton(online_BTN_join);
     }
 
-    private void initButton(MaterialButton button) {
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        finish();
+    }
+
+    private void initButton(AppCompatButton button) {
         button.setOnClickListener(view -> {
             code = online_TXT_code.getText().toString();
             if (!code.equalsIgnoreCase("null")
                     && !code.equalsIgnoreCase("")) {
                 player.setSessionKey(code);
-                Log.d(MyUtility.LOG_TAG, player.getUsername() + " session key is "
-                        + player.getSessionKey());
                 Intent intent;
                 if (button.getId() == online_BTN_create.getId()) {
                     player.isCreator = true;
@@ -69,7 +72,7 @@ public class Activity_OnlineGameMenu extends AppCompatActivity {
                 } else {
                     return;
                 }
-                intent.putExtra(MyUtility.PLAYER_1, player);
+                intent.putExtra(MyUtility.PLAYER, player);
                 startActivity(intent);
             } else {
                 MySignal.getInstance().frenchToast("Please enter a valid code");

@@ -13,7 +13,10 @@ class MyAnimationListener implements Animation.AnimationListener {
     private final Intent intent;
     private final Activity activity;
 
-    public MyAnimationListener(Animation nextAnimation, View nextView, Intent intent, Activity activity) {
+    public MyAnimationListener(Animation nextAnimation,
+                               View nextView,
+                               Intent intent,
+                               Activity activity) {
         this.nextAnimation = nextAnimation;
         this.nextView = nextView;
         this.intent = intent;

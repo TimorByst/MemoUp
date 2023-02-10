@@ -36,25 +36,27 @@
             android:hint="enter code here"
             android:textSize="20sp"/>
 
-        <com.google.android.material.button.MaterialButton
+        <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/online_BTN_create"
             android:layout_width="250dp"
             android:layout_height="50dp"
             android:layout_margin="20dp"
             android:layout_weight="1"
             android:background="@drawable/memo_up_card_background"
+            android:textColor="@color/white"
             android:gravity="center"
             android:text="Create"
             android:textSize="20sp"/>
 
 
-        <com.google.android.material.button.MaterialButton
+        <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/online_BTN_join"
             android:layout_width="250dp"
             android:layout_height="50dp"
             android:layout_margin="20dp"
             android:layout_weight="1"
             android:background="@drawable/memo_up_card_background"
+            android:textColor="@color/white"
             android:gravity="center"
             android:text="Join"
             android:textSize="20sp"/>

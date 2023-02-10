@@ -5,7 +5,6 @@ import android.animation.ObjectAnimator;
 import android.animation.ValueAnimator;
 import android.content.Intent;
 import android.os.Bundle;
-import android.os.Handler;
 import android.util.Log;
 import android.view.View;
 import android.view.animation.Animation;
@@ -44,7 +43,7 @@ public class Activity_Online extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_online);
         Intent previous = getIntent();
-        player = (MyUser) previous.getSerializableExtra(MyUtility.PLAYER_1);
+        player = (MyUser) previous.getSerializableExtra(MyUtility.PLAYER);
         boardSize = previous.getIntExtra(MyUtility.BOARD_SIZE, boardSize);
         findViews();
         initViews();
@@ -158,7 +157,7 @@ public class Activity_Online extends AppCompatActivity {
 
     private void startGame() {
         Intent intent = new Intent(this, Activity_Multiplayer.class);
-        intent.putExtra(MyUtility.PLAYER_1, player);
+        intent.putExtra(MyUtility.PLAYER, player);
         intent.putExtra(MyUtility.GAME_SESSIONS, gameSession);
         if (player.isCreator) {
             startActivity(intent);
@@ -190,7 +189,6 @@ public class Activity_Online extends AppCompatActivity {
                 public void onAnimationRepeat(Animation animation) {}
             });
             online_TXT_wait.startAnimation(fade_out);
-            //new Handler().postDelayed(() -> online_TXT_wait.startAnimation(fade_out), 2000);
         }
         Log.d(MyUtility.LOG_TAG, "A game is starting");
     }

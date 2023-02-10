@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".Activity_Profile"
+    android:background="@drawable/memo_up_background">
+
+    <TextView
+        android:id="@+id/profile_TXT_username"
+        android:layout_width="250dp"
+        android:layout_height="75dp"
+        android:layout_alignParentTop="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="50dp"
+        android:autoSizeTextType="uniform"
+        android:maxLines="1"
+        android:gravity="center"
+        android:text="TextView" />
+
+    <ImageView
+        android:id="@+id/profile_IMG_user"
+        android:layout_width="125dp"
+        android:layout_height="125dp"
+        android:layout_below="@id/profile_TXT_username"
+        android:layout_marginTop="10dp"
+        android:layout_centerHorizontal="true"
+        tools:srcCompat="@tools:sample/avatars" />
+
+    <LinearLayout
+        android:layout_width="350dp"
+        android:layout_height="350dp"
+        android:layout_below="@+id/profile_IMG_user"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="30dp"
+        android:orientation="vertical">
+        <LinearLayout
+            android:id="@+id/row0"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_weight="1">
+            <TextView
+                android:id="@+id/profile_TXT_solo"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:autoSizeTextType="uniform"
+                android:maxLines="1"
+                android:gravity="center"
+                android:text="TextView"
+                android:padding="10dp"/>
+            <TextView
+                android:id="@+id/profile_TXT_multi"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:autoSizeTextType="uniform"
+                android:maxLines="1"
+                android:gravity="center"
+                android:text="TextView"
+                android:padding="10dp"/>
+        </LinearLayout>
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/row0"
+            android:orientation="horizontal"
+            android:layout_weight="1"
+            >
+            <TextView
+                android:id="@+id/profile_TXT_win"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:autoSizeTextType="uniform"
+                android:maxLines="1"
+                android:gravity="center"
+                android:text="TextView"
+                android:padding="10dp"/>
+            <TextView
+                android:id="@+id/profile_TXT_winRate"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:autoSizeTextType="uniform"
+                android:maxLines="1"
+                android:gravity="center"
+                android:text="TextView"
+                android:padding="10dp"/>
+        </LinearLayout>
+    </LinearLayout>
+
+
+
+</RelativeLayout>

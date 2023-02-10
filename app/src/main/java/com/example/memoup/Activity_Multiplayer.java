@@ -31,7 +31,6 @@ public class Activity_Multiplayer extends AppCompatActivity {
     private final String MATCH_FOUND = "match_found";
     private final String ONE_CARD_FLIP = "one_card_flip";
     private final String TWO_CARD_FLIP = "two_card_flip";
-    private final boolean VISIBLE = true;
     private boolean playSoundOnce = true;
     private boolean flipInProgress = false;
     private AppCompatTextView player_one_TXT_name;
@@ -58,7 +57,6 @@ public class Activity_Multiplayer extends AppCompatActivity {
     private boolean coldStart = true;
     private boolean secondCard;
 
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -70,7 +68,7 @@ public class Activity_Multiplayer extends AppCompatActivity {
 
         Intent previous = getIntent();
         gameSession = (GameSession) previous.getSerializableExtra(MyUtility.GAME_SESSIONS);
-        player = (MyUser) previous.getSerializableExtra(MyUtility.PLAYER_1);
+        player = (MyUser) previous.getSerializableExtra(MyUtility.PLAYER);
         boardSize = gameSession.getBoardSize();
         playerHost = gameSession.getPlayerHost();
         playerGuest = gameSession.getPlayerGuest();
@@ -87,17 +85,27 @@ public class Activity_Multiplayer extends AppCompatActivity {
     }
 
     @Override
+    protected void onStop() {
+        super.onStop();
+        Intent intent = new Intent(this, Activity_MainMenu.class);
+        intent.putExtra(MyUtility.PLAYER, player);
+        startActivity(intent);
+    }
+
+    @Override
     protected void onDestroy() {
         super.onDestroy();
         if (player.getId().equalsIgnoreCase(playerHost.getId())) {
             firebaseDatabase.getReference(MyUtility.GAMES)
                     .child(gameManager.getGameId()).removeValue();
         }
+        finish();
     }
 
     private void initPlayerViews() {
         player_one_TXT_name.setText(playerHost.getUsername());
         player_one_score.setText("0");
+        player_one_IMG.setImageResource(playerHost.getUserImageResource());
         player_one_win_rate.setText("0%");
         if (playerHost.getWins() != 0 && playerHost.getGamesPlayedMulti() != 0) {
             float wins = playerHost.getWins();
@@ -106,6 +114,7 @@ public class Activity_Multiplayer extends AppCompatActivity {
         }
         player_two_TXT_name.setText(playerGuest.getUsername());
         player_two_score.setText("0");
+        player_two_IMG.setImageResource(playerGuest.getUserImageResource());
         player_two_win_rate.setText("0%");
         if (playerGuest.getWins() != 0 && playerGuest.getGamesPlayedMulti() != 0) {
             float wins = playerGuest.getWins();
@@ -169,9 +178,6 @@ public class Activity_Multiplayer extends AppCompatActivity {
     private void initViews() {
         gameManager = new GameManager(boardSize, playerHost, playerGuest,
                 gameSession.getCardImagesNames());
-
-        Log.d(MyUtility.LOG_TAG, gameManager.getPlayerHost().getUsername() + " is the host");
-        Log.d(MyUtility.LOG_TAG, gameManager.getPlayerGuest().getUsername() + " is the guest");
         gameBoard.setRowCount(boardSize);
         gameBoard.setColumnCount(boardSize);
         for (int i = 0; i < boardSize * boardSize; i++) {
@@ -226,13 +232,6 @@ public class Activity_Multiplayer extends AppCompatActivity {
         Glide.with(this).load(imageResource).into(imageView);
     }
 
-    /**
-     * Flips a card in the memory game board.
-     *
-     * @param view The image view associated with the card being flipped.
-     * @param row  The row index of the card being flipped.
-     * @param col  The column index of the card being flipped.
-     */
     private void flipCard(View view, int row, int col) {
         gameBoard.setEnabled(false);
         ShapeableImageView imageView = (ShapeableImageView) view;
@@ -258,7 +257,6 @@ public class Activity_Multiplayer extends AppCompatActivity {
 
     private void playTwoCardAnimation() {
         playSoundOnce = true;
-        Log.d(MyUtility.LOG_TAG, "Flipping two cards down");
         for (int[] card : gameManager.getFlippedCards()) {
             int row = card[0];
             int col = card[1];

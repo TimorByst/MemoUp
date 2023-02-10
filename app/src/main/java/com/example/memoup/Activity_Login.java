@@ -43,11 +43,13 @@ public class Activity_Login extends AppCompatActivity {
                             myUser.setUsername(user.getUsername())
                                     .setGamesPlayedMulti(user.getGamesPlayedMulti())
                                     .setGamesPlayedSolo(user.getGamesPlayedSolo())
-                                    .setWins(user.getWins());
+                                    .setWins(user.getWins())
+                                    .setBestTime(user.getBestTime())
+                                    .setUserImageResource(user.getUserImageResource());
                             Log.d(MyUtility.LOG_TAG, myUser.getUsername() + " is now online " + myUser.getGamesPlayedMulti());
                             Intent intent = new Intent(Activity_Login.this,
                                     Activity_MainMenu.class);
-                            intent.putExtra(MyUtility.PLAYER_1, myUser);
+                            intent.putExtra(MyUtility.PLAYER, myUser);
                             startActivity(intent);
                             Log.d(MyUtility.LOG_TAG, "User loaded successfully");
                             finish();
@@ -76,6 +78,12 @@ public class Activity_Login extends AppCompatActivity {
         super.onPause();
         Intent serviceIntent = new Intent(this, MyMusicService.class);
         stopService(serviceIntent);
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        finish();
     }
 
     private void prettyLogin() {
@@ -116,7 +124,7 @@ public class Activity_Login extends AppCompatActivity {
             myUser.setUsername(input.getText().toString());
             firebaseManager.saveUser(myUser);
             Intent intent = new Intent(Activity_Login.this, Activity_MainMenu.class);
-            intent.putExtra(MyUtility.PLAYER_1, myUser);
+            intent.putExtra(MyUtility.PLAYER, myUser);
             startActivity(intent);
             finish();
         });

@@ -10,12 +10,16 @@ import androidx.annotation.Nullable;
 public class MyMusicService extends Service {
     private MediaPlayer mediaPlayer;
     private boolean isRunning;
+    private int currentPosition = 0;
 
+    public void onCreate() {
+        mediaPlayer = MediaPlayer.create(this, R.raw.memo_up_soundtrack);
+        mediaPlayer.setLooping(true);
+    }
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         if(!isRunning) {
-            mediaPlayer = MediaPlayer.create(this, R.raw.memo_up_soundtrack);
-            mediaPlayer.setLooping(true);
+            mediaPlayer.seekTo(currentPosition);
             mediaPlayer.start();
             isRunning = true;
         }
@@ -26,7 +30,7 @@ public class MyMusicService extends Service {
     public void onDestroy() {
         if (mediaPlayer != null) {
             mediaPlayer.stop();
-            mediaPlayer.reset();
+            currentPosition = mediaPlayer.getCurrentPosition();
             mediaPlayer.release();
             isRunning = false;
         }
