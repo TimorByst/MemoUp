@@ -15,6 +15,7 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.AppCompatImageView;
 import androidx.appcompat.widget.AppCompatTextView;
 
 import com.bumptech.glide.Glide;
@@ -39,6 +40,8 @@ public class Activity_Multiplayer extends AppCompatActivity {
     private AppCompatTextView player_two_TXT_name;
     private AppCompatTextView player_two_win_rate;
     private AppCompatTextView player_two_score;
+    private AppCompatImageView game_IMG_background;
+
     private ShapeableImageView player_one_IMG;
     private ShapeableImageView player_two_IMG;
     private ShapeableImageView game_over_IMG;
@@ -164,6 +167,7 @@ public class Activity_Multiplayer extends AppCompatActivity {
                             secondCard = true;
                         } else {
                             endGame();
+                            databaseReference.removeEventListener(this);
                         }
                     }
                 }
@@ -198,6 +202,7 @@ public class Activity_Multiplayer extends AppCompatActivity {
             gameBoard.addView(imageView);
         }
         loadImageResource(R.drawable.happiness, game_over_IMG);
+        loadImageResource(R.drawable.memo_up_app_background, game_IMG_background);
         game_over_IMG.setVisibility(View.INVISIBLE);
     }
 
@@ -222,6 +227,7 @@ public class Activity_Multiplayer extends AppCompatActivity {
         winner = findViewById(R.id.winner);
         game_over_IMG = findViewById(R.id.game_over_IMG);
         gameBoard = findViewById(R.id.gameBoard);
+        game_IMG_background = findViewById(R.id.game_IMG_background);
     }
 
     private int dpToPx(int dp) {
@@ -316,6 +322,8 @@ public class Activity_Multiplayer extends AppCompatActivity {
         } else if (gameManager.getHostScore() < gameManager.getGuestScore()) {
             guestWon = true;
             winner.setText(gameManager.getPlayerGuest().getUsername() + " winner!");
+        }else{
+            winner.setText("it's a draw!");
         }
         playerHost.gameOver(false, hostWon);
         playerGuest.gameOver(false, guestWon);

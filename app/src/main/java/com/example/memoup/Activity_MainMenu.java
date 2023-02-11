@@ -1,17 +1,23 @@
 package com.example.memoup;
 
 import android.content.Intent;
+import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.util.Log;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.AppCompatButton;
+import androidx.appcompat.widget.AppCompatImageView;
+
+import com.bumptech.glide.Glide;
 
 public class Activity_MainMenu extends AppCompatActivity {
 
     private AppCompatButton profile_BTN_mainMenu;
     private AppCompatButton solo_BTN_mainMenu;
     private AppCompatButton online_BTN_mainMenu;
+    private AppCompatImageView game_IMG_background;
+    private MediaPlayer mediaPlayer;
     private MyUser player_1;
 
     @Override
@@ -23,11 +29,13 @@ public class Activity_MainMenu extends AppCompatActivity {
         setContentView(R.layout.activity_main_menu);
         Intent previous = getIntent();
         player_1 = (MyUser) previous.getSerializableExtra(MyUtility.PLAYER);
+        mediaPlayer = MediaPlayer.create(this, R.raw.button_click);
         Log.d(MyUtility.LOG_TAG, player_1.getUsername() + " Is online");
         findViews();
         initButton(profile_BTN_mainMenu);
         initButton(solo_BTN_mainMenu);
         initButton(online_BTN_mainMenu);
+        Glide.with(this).load(R.drawable.memo_up_app_background).into(game_IMG_background);
     }
 
     @Override
@@ -41,13 +49,15 @@ public class Activity_MainMenu extends AppCompatActivity {
     protected void onPause() {
         super.onPause();
         Intent serviceIntent = new Intent(this, MyMusicService.class);
-        stopService(serviceIntent);
+        startService(serviceIntent);
     }
 
     private void findViews() {
         profile_BTN_mainMenu = findViewById(R.id.profile_BTN_mainMenu);
         solo_BTN_mainMenu = findViewById(R.id.solo_BTN_mainMenu);
         online_BTN_mainMenu = findViewById(R.id.online_BTN_mainMenu);
+        game_IMG_background = findViewById(R.id.game_IMG_background);
+
     }
 
     private void initButton(AppCompatButton button) {
@@ -57,20 +67,22 @@ public class Activity_MainMenu extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        mediaPlayer.release();
         finish();
     }
 
     private void clicked(int buttonId) {
         boolean solo = true;
+        mediaPlayer.start();
         Intent intent;
         if (buttonId == online_BTN_mainMenu.getId()) {
             solo = false;
             intent = new Intent(this, Activity_OnlineGameMenu.class);
         } else if (buttonId == solo_BTN_mainMenu.getId()) {
             intent = new Intent(this, Activity_GameLevel.class);
-        } else if (buttonId == profile_BTN_mainMenu.getId()){
+        } else if (buttonId == profile_BTN_mainMenu.getId()) {
             intent = new Intent(this, Activity_Profile.class);
-        }else{
+        } else {
             return;
         }
         intent.putExtra(MyUtility.PLAYER, player_1);

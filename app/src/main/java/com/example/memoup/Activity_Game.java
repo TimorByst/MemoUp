@@ -13,6 +13,7 @@ import android.widget.GridLayout;
 import android.widget.ImageView;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.AppCompatImageView;
 import androidx.appcompat.widget.AppCompatTextView;
 
 import com.bumptech.glide.Glide;
@@ -37,6 +38,7 @@ public class Activity_Game extends AppCompatActivity {
     private AppCompatTextView single_player_time;
     private AppCompatTextView single_player_score;
     private ShapeableImageView game_over_IMG;
+    private AppCompatImageView game_IMG_background;
     private MyTicker myTicker;
     private GridLayout gameBoard;
     private GameManager gameManager;
@@ -126,6 +128,7 @@ public class Activity_Game extends AppCompatActivity {
         single_player_time = findViewById(R.id.single_player_time);
         single_player_score = findViewById(R.id.single_player_score);
         game_over_IMG = findViewById(R.id.game_over_IMG);
+        game_IMG_background = findViewById(R.id.game_IMG_background);
         gameBoard = findViewById(R.id.gameBoard);
     }
 
@@ -155,6 +158,7 @@ public class Activity_Game extends AppCompatActivity {
             gameBoard.addView(imageView);
         }
         loadImageResource(R.drawable.happiness, game_over_IMG);
+        loadImageResource(R.drawable.memo_up_app_background, game_IMG_background);
         game_over_IMG.setVisibility(View.INVISIBLE);
     }
 

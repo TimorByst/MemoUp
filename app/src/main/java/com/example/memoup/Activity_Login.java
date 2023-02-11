@@ -1,7 +1,11 @@
 package com.example.memoup;
 
+import android.animation.AnimatorSet;
+import android.animation.ObjectAnimator;
+import android.animation.ValueAnimator;
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Handler;
 import android.text.InputType;
 import android.util.Log;
 import android.widget.EditText;
@@ -9,18 +13,24 @@ import android.widget.EditText;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.AppCompatImageView;
 
+import com.bumptech.glide.Glide;
 import com.firebase.ui.auth.AuthUI;
 import com.firebase.ui.auth.FirebaseAuthUIActivityResultContract;
 import com.firebase.ui.auth.data.model.FirebaseAuthUIAuthenticationResult;
+import com.google.android.material.imageview.ShapeableImageView;
+import com.google.android.material.textview.MaterialTextView;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 
 public class Activity_Login extends AppCompatActivity {
-
+    private AppCompatImageView game_IMG_background;
+    private ShapeableImageView online_IMG;
     private FirebaseManager firebaseManager;
     private MyUser myUser;
 
@@ -29,8 +39,11 @@ public class Activity_Login extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         MyUtility.hideSystemUI(this);
         setContentView(R.layout.activity_login);
+        findViews();
+        initViews();
+        AppCompatImageView game_IMG_background = findViewById(R.id.game_IMG_background);
+        Glide.with(this).load(R.drawable.memo_up_app_background).into(game_IMG_background);
         firebaseManager = FirebaseManager.getInstance();
-
         FirebaseUser user = firebaseManager.getFirebaseAuth().getCurrentUser();
         if (user == null) {
             prettyLogin();
@@ -50,9 +63,11 @@ public class Activity_Login extends AppCompatActivity {
                             Intent intent = new Intent(Activity_Login.this,
                                     Activity_MainMenu.class);
                             intent.putExtra(MyUtility.PLAYER, myUser);
-                            startActivity(intent);
                             Log.d(MyUtility.LOG_TAG, "User loaded successfully");
-                            finish();
+                            new Handler().postDelayed(() -> {
+                                startActivity(intent);
+                                finish();
+                            }, 1000);
                         }
 
 
@@ -64,6 +79,29 @@ public class Activity_Login extends AppCompatActivity {
                     }
             );
         }
+    }
+
+    private void findViews() {
+        online_IMG = findViewById(R.id.online_IMG);
+        game_IMG_background = findViewById(R.id.game_IMG_background);
+    }
+
+    private void initViews() {
+        Glide.with(this).load(R.drawable.memo_up_logo).into(online_IMG);
+        Glide.with(this).load(R.drawable.memo_up_app_background).into(game_IMG_background);
+        ObjectAnimator scaleXAnimator = ObjectAnimator
+                .ofFloat(online_IMG, "scaleX", 1f, 1.2f, 1f);
+        scaleXAnimator.setDuration(1750);
+        scaleXAnimator.setRepeatCount(ValueAnimator.INFINITE);
+        scaleXAnimator.setRepeatMode(ValueAnimator.REVERSE);
+        ObjectAnimator scaleYAnimator = ObjectAnimator
+                .ofFloat(online_IMG, "scaleY", 1f, 1.2f, 1f);
+        scaleYAnimator.setDuration(1750);
+        scaleYAnimator.setRepeatCount(ValueAnimator.INFINITE);
+        scaleYAnimator.setRepeatMode(ValueAnimator.REVERSE);
+        AnimatorSet animatorSet = new AnimatorSet();
+        animatorSet.playTogether(scaleXAnimator, scaleYAnimator);
+        animatorSet.start();
     }
 
     @Override
@@ -125,17 +163,16 @@ public class Activity_Login extends AppCompatActivity {
             firebaseManager.saveUser(myUser);
             Intent intent = new Intent(Activity_Login.this, Activity_MainMenu.class);
             intent.putExtra(MyUtility.PLAYER, myUser);
-            startActivity(intent);
-            finish();
+            new Handler().postDelayed(() -> {
+                startActivity(intent);
+                finish();
+            }, 2000);
         });
         builder.setNegativeButton("Cancel", null);
 
         AlertDialog dialog = builder.create();
         dialog.show();
-    }    private final ActivityResultLauncher<Intent> signInLauncher = registerForActivityResult(
-            new FirebaseAuthUIActivityResultContract(),
-            this::onSignInResult
-    );
+    }
 
     @Override
     public void onWindowFocusChanged(boolean hasFocus) {
@@ -143,7 +180,10 @@ public class Activity_Login extends AppCompatActivity {
         if (hasFocus) {
             MyUtility.hideSystemUI(this);
         }
-    }
+    }    private final ActivityResultLauncher<Intent> signInLauncher = registerForActivityResult(
+            new FirebaseAuthUIActivityResultContract(),
+            this::onSignInResult
+    );
 
 
 

@@ -8,6 +8,12 @@
     tools:context=".Activity_GameLevel"
     android:background="@drawable/memo_up_background">
 
+    <androidx.appcompat.widget.AppCompatImageView
+        android:id="@+id/game_IMG_background"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:scaleType="centerCrop"/>
+
     <com.google.android.material.textview.MaterialTextView
         android:id="@+id/headline_TXT_level"
         android:layout_width="wrap_content"
@@ -30,7 +36,7 @@
             android:layout_height="50dp"
             android:layout_margin="20dp"
             android:layout_weight="1"
-            android:background="@drawable/memo_up_card_background"
+            android:background="@drawable/oval_button"
             android:textColor="@color/white"
             android:gravity="center"
             android:text="@string/_4x4"
@@ -42,7 +48,7 @@
             android:layout_height="50dp"
             android:layout_margin="20dp"
             android:layout_weight="1"
-            android:background="@drawable/memo_up_card_background"
+            android:background="@drawable/oval_button"
             android:textColor="@color/white"
             android:gravity="center"
             android:text="@string/_5x5"
@@ -55,7 +61,7 @@
             android:layout_height="50dp"
             android:layout_margin="20dp"
             android:layout_weight="1"
-            android:background="@drawable/memo_up_card_background"
+            android:background="@drawable/oval_button"
             android:textColor="@color/white"
             android:gravity="center"
             android:text="@string/_6x6"

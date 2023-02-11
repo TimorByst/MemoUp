@@ -2,26 +2,28 @@ package com.example.memoup;
 
 import android.app.Dialog;
 import android.content.Intent;
+import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.AppCompatImageView;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
 
 public class Activity_Profile extends AppCompatActivity {
-
+    private AppCompatImageView game_IMG_background;
     private TextView profile_TXT_solo;
     private TextView profile_TXT_multi;
     private TextView profile_TXT_win;
     private TextView profile_TXT_winRate;
     private TextView profile_TXT_username;
     private ImageView profile_IMG_user;
+    private MediaPlayer mediaPlayer;
     private MyUser player;
 
     @Override
@@ -33,6 +35,7 @@ public class Activity_Profile extends AppCompatActivity {
         startService(serviceIntent);
         Intent previous = getIntent();
         player = (MyUser) previous.getSerializableExtra(MyUtility.PLAYER);
+        mediaPlayer = MediaPlayer.create(this, R.raw.button_click);
         FirebaseManager.getInstance().loadUser(
                 player.getId(), new FirebaseManager.OnUserLoadedListener() {
                     @Override
@@ -78,6 +81,7 @@ public class Activity_Profile extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        mediaPlayer.release();
         finish();
     }
 
@@ -93,6 +97,7 @@ public class Activity_Profile extends AppCompatActivity {
         profile_TXT_win.setText("Wins: " + player.getWins() + "");
         profile_TXT_winRate.setText(winRate);
         profile_TXT_username.setText(player.getUsername() + "'s profile");
+        Glide.with(this).load(R.drawable.memo_up_app_background).into(game_IMG_background);
 
         if (player.getUserImageResource() == 0) {
             Glide.with(this).load(R.drawable.default_avatar).into(profile_IMG_user);
@@ -110,9 +115,11 @@ public class Activity_Profile extends AppCompatActivity {
         profile_TXT_winRate = findViewById(R.id.profile_TXT_winRate);
         profile_IMG_user = findViewById(R.id.profile_IMG_user);
         profile_TXT_username = findViewById(R.id.profile_TXT_username);
+        game_IMG_background = findViewById(R.id.game_IMG_background);
     }
 
     private void showAvatarDialog() {
+        mediaPlayer.start();
         Dialog dialog = new Dialog(this);
         dialog.setContentView(R.layout.avatar_dialog_layout);
 
