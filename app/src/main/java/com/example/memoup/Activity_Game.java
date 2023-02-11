@@ -13,6 +13,7 @@ import android.widget.GridLayout;
 import android.widget.ImageView;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.AppCompatImageView;
 import androidx.appcompat.widget.AppCompatTextView;
 
 import com.bumptech.glide.Glide;
@@ -20,9 +21,6 @@ import com.google.android.material.imageview.ShapeableImageView;
 
 public class Activity_Game extends AppCompatActivity {
 
-    public interface CallbackTimer {
-        void tick();
-    }
     private final int FLIP_CARD_ANIMATION_DURATION = 500;
     private final int TICK_SPEED = 1000;
     private final String GAME_START = "game_start";
@@ -30,8 +28,9 @@ public class Activity_Game extends AppCompatActivity {
     private final String MATCH_FOUND = "match_found";
     private final String ONE_CARD_FLIP = "one_card_flip";
     private final String TWO_CARD_FLIP = "two_card_flip";
-    private final boolean VISIBLE = true;
     private int boardSize;
+    private int minutesPassed;
+    private int secondsPassed;
     private boolean firstStart = true;
     private boolean playSoundOnce = true;
     private boolean secondCard = false;
@@ -39,6 +38,7 @@ public class Activity_Game extends AppCompatActivity {
     private AppCompatTextView single_player_time;
     private AppCompatTextView single_player_score;
     private ShapeableImageView game_over_IMG;
+    private AppCompatImageView game_IMG_background;
     private MyTicker myTicker;
     private GridLayout gameBoard;
     private GameManager gameManager;
@@ -52,7 +52,7 @@ public class Activity_Game extends AppCompatActivity {
         setContentView(R.layout.activity_game);
         Intent previous = getIntent();
         boardSize = previous.getIntExtra(MyUtility.BOARD_SIZE, boardSize);
-        player = (MyUser) previous.getSerializableExtra(MyUtility.PLAYER_1);
+        player = (MyUser) previous.getSerializableExtra(MyUtility.PLAYER);
         initGamaManager();
         findViews();
         initViews();
@@ -75,6 +75,9 @@ public class Activity_Game extends AppCompatActivity {
     @Override
     protected void onStop() {
         super.onStop();
+        Intent intent = new Intent(this, Activity_MainMenu.class);
+        intent.putExtra(MyUtility.PLAYER, player);
+        startActivity(intent);
     }
 
     @Override
@@ -93,21 +96,12 @@ public class Activity_Game extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        gameManager.destroy();
         finish();
     }
 
     private void runTimer() {
-        callbackTimer = new CallbackTimer() {
-            @Override
-            public void tick() {
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        ticker();
-                    }
-                });
-            }
-        };
+        callbackTimer = () -> runOnUiThread(this::ticker);
         myTicker = new MyTicker(callbackTimer);
         if (!myTicker.isRunning() && firstStart) {
             myTicker.start(TICK_SPEED);
@@ -117,16 +111,16 @@ public class Activity_Game extends AppCompatActivity {
 
     private void ticker() {
         String[] currentTime = single_player_time.getText().toString().split(":", 2);
-        int seconds = Integer.parseInt(currentTime[1]) + 1;
-        int minutes = Integer.parseInt(currentTime[0]);
-        if (seconds >= 60) {
-            seconds = seconds % 60;
-            minutes++;
+        secondsPassed = Integer.parseInt(currentTime[1]) + 1;
+        minutesPassed = Integer.parseInt(currentTime[0]);
+        if (secondsPassed >= 60) {
+            secondsPassed = secondsPassed % 60;
+            minutesPassed++;
         }
         single_player_time.setText(
-                (minutes < 10 ? ("0" + minutes) : minutes)
+                (minutesPassed < 10 ? ("0" + minutesPassed) : minutesPassed)
                         + ":"
-                        + (seconds < 10 ? ("0" + seconds) : seconds)
+                        + (secondsPassed < 10 ? ("0" + secondsPassed) : secondsPassed)
         );
     }
 
@@ -134,29 +128,14 @@ public class Activity_Game extends AppCompatActivity {
         single_player_time = findViewById(R.id.single_player_time);
         single_player_score = findViewById(R.id.single_player_score);
         game_over_IMG = findViewById(R.id.game_over_IMG);
+        game_IMG_background = findViewById(R.id.game_IMG_background);
         gameBoard = findViewById(R.id.gameBoard);
     }
 
     /**
-     * This method initializes the views for the game board.
-     * <p>The following steps are performed in the method:
-     * <ol>
-     * <li>A {@code GameManager} object is created with the given board size.</li>
-     * <li>The row and column count for the game board grid layout is set to the given board size.</li>
-     * <li>A loop is executed for the number of cells in the game board.
-     * <ul>
-     * <li>A {@code ShapeableImageView} object is created for each cell.</li>
-     * <li>Layout parameters for the image view are set, including width, height,
-     * margins, and gravity.</li>
-     * <li>The background resource for the image view is set to the default card background.</li>
-     * <li>The default image resource is loaded into the image view
-     * using the {@code loadImageResource} method.</li>
-     * <li>An on-click listener is added to the image view,
-     * which calls the {@code clicked} method when the image view is clicked.</li>
-     * <li>The image view is added to the game board grid layout.</li>
-     * </ul>
-     * </li>
-     * </ol>
+     * The method `initViews` is used to initialize and set up the game board and its cells.
+     * It sets the number of rows and columns in the game board, creates and configures cells,
+     * sets a default image resource for each cell, and sets an OnClickListener for each cell.
      */
     private void initViews() {
         gameBoard.setRowCount(boardSize);
@@ -175,15 +154,11 @@ public class Activity_Game extends AppCompatActivity {
             loadImageResource(gameManager.getDefaultImageResource(), imageView);
             final int finalI = i / boardSize;
             final int finalJ = i % boardSize;
-            imageView.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View view) {
-                    clicked(view, finalI, finalJ);
-                }
-            });
+            imageView.setOnClickListener(view -> clicked(view, finalI, finalJ));
             gameBoard.addView(imageView);
         }
         loadImageResource(R.drawable.happiness, game_over_IMG);
+        loadImageResource(R.drawable.memo_up_app_background, game_IMG_background);
         game_over_IMG.setVisibility(View.INVISIBLE);
     }
 
@@ -222,6 +197,7 @@ public class Activity_Game extends AppCompatActivity {
 
     private void endGame() {
         player.gameOver(false, true);
+        checkTime();
         FirebaseManager.getInstance().saveUser(player);
         playEndGameAnimation();
     }
@@ -245,27 +221,27 @@ public class Activity_Game extends AppCompatActivity {
                 .animate()
                 .setDuration(FLIP_CARD_ANIMATION_DURATION)
                 .rotationY(180)
-                .withEndAction(new Runnable() {
-                    @Override
-                    public void run() {
-                        gameManager.flipCard(row, col);
-                        imageView.setImageResource(gameManager.getImageResource(row, col));
-                        if (gameManager.getNumberOfFacedUpCards() == 2) {
-                            new Handler().postDelayed(new Runnable() {
-                                @Override
-                                public void run() {
-                                    playTwoCardAnimation(gameManager.checkMatch(row, col));
-                                }
-                            }, 500);
-                        } else {
-                            gameManager.setComparisonCard(row, col);
-                        }
-                        flipInProgress = false;
+                .withEndAction(() -> {
+                    gameManager.flipCard(row, col);
+                    imageView.setImageResource(gameManager.getImageResource(row, col));
+                    if (gameManager.getNumberOfFacedUpCards() == 2) {
+                        new Handler().postDelayed(
+                                () -> playTwoCardAnimation(gameManager.checkMatch(row, col)),
+                                500);
+                    } else {
+                        gameManager.setComparisonCard(row, col);
                     }
+                    flipInProgress = false;
                 });
         gameBoard.setEnabled(true);
     }
 
+    /**
+     * Flips two card after they were flipped up,
+     * there are two types of animation this function can play,
+     * they are played according to the mathFound argument.
+     * @param matchFound if a match been or not
+     */
     private void playTwoCardAnimation(boolean matchFound) {
         playSoundOnce = true;
         for (int[] card : gameManager.getFlippedCards()) {
@@ -279,29 +255,26 @@ public class Activity_Game extends AppCompatActivity {
                 int SPIN_Y_CARD = -180;
                 cardView.animate().setDuration(FLIP_CARD_ANIMATION_DURATION)
                         .rotationY(matchFound ? SPIN_Y_CARD : FACE_DOWN_CARD)
-                        .withEndAction(new Runnable() {
-                            @Override
-                            public void run() {
-                                gameManager.flipCard(row, col);
-                                if (matchFound) {
-                                    if (playSoundOnce) {
-                                        gameManager.playGameSound(MATCH_FOUND,
-                                                Activity_Game.this);
-                                        playSoundOnce = false;
-                                    }
-                                    single_player_score
-                                            .setText(gameManager.getHostScore() + "");
-                                    cardView.setVisibility(View.INVISIBLE);
-                                    MySignal.getInstance()
-                                            .frenchToast(Math.random() < 0.5 ? "Nice!" : "Good Job!");
-                                } else {
-                                    if (playSoundOnce) {
-                                        gameManager.playGameSound(TWO_CARD_FLIP,
-                                                Activity_Game.this);
-                                        playSoundOnce = false;
-                                    }
-                                    imageView.setImageResource(gameManager.getDefaultImageResource());
+                        .withEndAction(() -> {
+                            gameManager.flipCard(row, col);
+                            if (matchFound) {
+                                if (playSoundOnce) {
+                                    gameManager.playGameSound(MATCH_FOUND,
+                                            Activity_Game.this);
+                                    playSoundOnce = false;
                                 }
+                                single_player_score
+                                        .setText(gameManager.getHostScore() + "");
+                                cardView.setVisibility(View.INVISIBLE);
+                                MySignal.getInstance()
+                                        .frenchToast(Math.random() < 0.5 ? "Nice!" : "Good Job!");
+                            } else {
+                                if (playSoundOnce) {
+                                    gameManager.playGameSound(TWO_CARD_FLIP,
+                                            Activity_Game.this);
+                                    playSoundOnce = false;
+                                }
+                                imageView.setImageResource(gameManager.getDefaultImageResource());
                             }
                         });
             } catch (NullPointerException e) {
@@ -323,12 +296,7 @@ public class Activity_Game extends AppCompatActivity {
 
             @Override
             public void onAnimationEnd(Animation animation) {
-                new Handler().postDelayed(new Runnable() {
-                    @Override
-                    public void run() {
-                        finish();
-                    }
-                }, 2000);
+                new Handler().postDelayed(() -> finish(), 2000);
             }
 
             @Override
@@ -340,11 +308,29 @@ public class Activity_Game extends AppCompatActivity {
         game_over_IMG.setVisibility(View.VISIBLE);
     }
 
+    private void checkTime() {
+        String[] currentTime = player.getBestTime().split(":", 2);
+        //only true if there is no best time at all
+        if (currentTime[0].equalsIgnoreCase("--")) {
+            player.setBestTime(single_player_time.getText().toString());
+        } else if (minutesPassed < Integer.parseInt(currentTime[0])) {
+            player.setBestTime(single_player_time.getText().toString());
+        } else if (minutesPassed == Integer.parseInt(currentTime[0])) {
+            if (secondsPassed < Integer.parseInt(currentTime[1])) {
+                player.setBestTime(single_player_time.getText().toString());
+            }
+        }
+    }
+
     @Override
     public void onWindowFocusChanged(boolean hasFocus) {
         super.onWindowFocusChanged(hasFocus);
         if (hasFocus) {
             MyUtility.hideSystemUI(this);
         }
+    }
+
+    public interface CallbackTimer {
+        void tick();
     }
 }

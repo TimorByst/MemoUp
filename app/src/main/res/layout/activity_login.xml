@@ -1,10 +1,34 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     tools:context=".Activity_Login"
-    android:background="@drawable/memo_up_background"
-    >
+    android:background="@drawable/memo_up_background">
+
+    <androidx.appcompat.widget.AppCompatImageView
+        android:id="@+id/game_IMG_background"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:scaleType="centerCrop"/>
+
+    <com.google.android.material.imageview.ShapeableImageView
+        android:id="@+id/online_IMG"
+        android:layout_width="150dp"
+        android:layout_height="150dp"
+        app:srcCompat="@drawable/memo_up_card_background"
+        android:layout_centerInParent="true"
+        android:scaleType="fitCenter"/>
+
+    <com.google.android.material.textview.MaterialTextView
+        android:id="@+id/online_TXT_wait"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="just a second..."
+        android:textSize="30sp"
+        android:layout_below="@id/online_IMG"
+        android:layout_centerInParent="true"
+        android:layout_marginTop="30dp"/>
+
 </RelativeLayout>

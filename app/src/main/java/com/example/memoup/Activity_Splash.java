@@ -20,6 +20,7 @@ public class Activity_Splash extends AppCompatActivity {
     private MaterialTextView splash_TXT_name;
     private MaterialTextView splash_TXT_creator;
     private AppCompatImageView splash_IMG_logo;
+    private AppCompatImageView game_IMG_background;
     private Animation slide_left_to_right;
     private Animation slide_right_to_left;
     private Animation fade_in;
@@ -40,6 +41,7 @@ public class Activity_Splash extends AppCompatActivity {
         splash_TXT_creator = findViewById(R.id.splash_TXT_creator);
         splash_TXT_name = findViewById(R.id.splash_TXT_name);
         splash_IMG_logo = findViewById(R.id.splash_IMG_logo);
+        game_IMG_background = findViewById(R.id.game_IMG_background);
     }
 
     private void initViews() {
@@ -48,7 +50,7 @@ public class Activity_Splash extends AppCompatActivity {
         String APP_NAME = "MemoUp";
         splash_TXT_name.setText(APP_NAME);
         Glide.with(this).load(R.drawable.memo_up_logo).into(splash_IMG_logo);
-
+        Glide.with(this).load(R.drawable.memo_up_app_background).into(game_IMG_background);
         slide_right_to_left = AnimationUtils.loadAnimation(
                 this, R.anim.slide_in_right_to_left);
         slide_left_to_right = AnimationUtils.loadAnimation(

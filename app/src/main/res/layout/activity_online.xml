@@ -8,6 +8,12 @@
     tools:context=".Activity_Online"
     android:background="@drawable/memo_up_background">
 
+    <androidx.appcompat.widget.AppCompatImageView
+        android:id="@+id/game_IMG_background"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:scaleType="centerCrop"/>
+
     <com.google.android.material.imageview.ShapeableImageView
         android:id="@+id/online_IMG"
         android:layout_width="150dp"

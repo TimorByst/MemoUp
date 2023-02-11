@@ -1,18 +1,21 @@
 package com.example.memoup;
 
 import android.content.Intent;
+import android.media.MediaPlayer;
 import android.os.Bundle;
-import android.util.Log;
 import android.widget.EditText;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.AppCompatButton;
+import androidx.appcompat.widget.AppCompatImageView;
 
-import com.google.android.material.button.MaterialButton;
+import com.bumptech.glide.Glide;
 
 public class Activity_OnlineGameMenu extends AppCompatActivity {
-
-    private MaterialButton online_BTN_create;
-    private MaterialButton online_BTN_join;
+    private AppCompatImageView game_IMG_background;
+    private AppCompatButton online_BTN_create;
+    private AppCompatButton online_BTN_join;
+    private MediaPlayer mediaPlayer;
     private EditText online_TXT_code;
     private String code = "null";
     private MyUser player;
@@ -25,7 +28,8 @@ public class Activity_OnlineGameMenu extends AppCompatActivity {
         startService(serviceIntent);
         setContentView(R.layout.activity_online_game_menu);
         Intent previous = getIntent();
-        player = (MyUser) previous.getSerializableExtra(MyUtility.PLAYER_1);
+        player = (MyUser) previous.getSerializableExtra(MyUtility.PLAYER);
+        mediaPlayer = MediaPlayer.create(this, R.raw.button_click);
         findViews();
         initViews();
     }
@@ -47,16 +51,23 @@ public class Activity_OnlineGameMenu extends AppCompatActivity {
     private void initViews() {
         initButton(online_BTN_create);
         initButton(online_BTN_join);
+        Glide.with(this).load(R.drawable.memo_up_app_background).into(game_IMG_background);
     }
 
-    private void initButton(MaterialButton button) {
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        mediaPlayer.release();
+        finish();
+    }
+
+    private void initButton(AppCompatButton button) {
         button.setOnClickListener(view -> {
+            mediaPlayer.start();
             code = online_TXT_code.getText().toString();
             if (!code.equalsIgnoreCase("null")
                     && !code.equalsIgnoreCase("")) {
                 player.setSessionKey(code);
-                Log.d(MyUtility.LOG_TAG, player.getUsername() + " session key is "
-                        + player.getSessionKey());
                 Intent intent;
                 if (button.getId() == online_BTN_create.getId()) {
                     player.isCreator = true;
@@ -69,7 +80,7 @@ public class Activity_OnlineGameMenu extends AppCompatActivity {
                 } else {
                     return;
                 }
-                intent.putExtra(MyUtility.PLAYER_1, player);
+                intent.putExtra(MyUtility.PLAYER, player);
                 startActivity(intent);
             } else {
                 MySignal.getInstance().frenchToast("Please enter a valid code");
@@ -81,6 +92,7 @@ public class Activity_OnlineGameMenu extends AppCompatActivity {
         online_TXT_code = findViewById(R.id.online_TXT_code);
         online_BTN_create = findViewById(R.id.online_BTN_create);
         online_BTN_join = findViewById(R.id.online_BTN_join);
+        game_IMG_background = findViewById(R.id.game_IMG_background);
     }
 
     @Override

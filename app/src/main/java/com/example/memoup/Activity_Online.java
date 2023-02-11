@@ -14,6 +14,7 @@ import android.view.animation.AnimationUtils;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.AppCompatImageView;
 
 import com.bumptech.glide.Glide;
 import com.google.android.material.imageview.ShapeableImageView;
@@ -28,9 +29,10 @@ import com.google.gson.Gson;
 public class Activity_Online extends AppCompatActivity {
 
     private final FirebaseDatabase firebaseDatabase = FirebaseDatabase.getInstance();
-    private final DatabaseReference databaseReference
-            = firebaseDatabase.getReference(MyUtility.GAME_SESSIONS);
+    private DatabaseReference databaseReference;
     private ShapeableImageView online_IMG;
+    private AppCompatImageView game_IMG_background;
+
     private MaterialTextView online_TXT_wait;
     private MaterialTextView online_TXT_start;
     private MyUser player;
@@ -44,11 +46,11 @@ public class Activity_Online extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_online);
         Intent previous = getIntent();
-        player = (MyUser) previous.getSerializableExtra(MyUtility.PLAYER_1);
+        player = (MyUser) previous.getSerializableExtra(MyUtility.PLAYER);
         boardSize = previous.getIntExtra(MyUtility.BOARD_SIZE, boardSize);
         findViews();
         initViews();
-
+        databaseReference = firebaseDatabase.getReference(MyUtility.GAME_SESSIONS);
         databaseReference.addChildEventListener(new ChildEventListener() {
             @Override
             public void onChildAdded(@NonNull DataSnapshot snapshot,
@@ -157,17 +159,21 @@ public class Activity_Online extends AppCompatActivity {
     }
 
     private void startGame() {
+        createPlayerMoveEntry();
         Intent intent = new Intent(this, Activity_Multiplayer.class);
-        intent.putExtra(MyUtility.PLAYER_1, player);
+        intent.putExtra(MyUtility.PLAYER, player);
         intent.putExtra(MyUtility.GAME_SESSIONS, gameSession);
         if (player.isCreator) {
-            startActivity(intent);
+            new Handler().postDelayed(() -> startActivity(intent), 1000);
+
         } else {
             Animation fade_in = AnimationUtils.loadAnimation(this, R.anim.fade_in);
             Animation fade_out = AnimationUtils.loadAnimation(this, R.anim.fade_out);
             fade_out.setAnimationListener(new Animation.AnimationListener() {
                 @Override
-                public void onAnimationStart(Animation animation) {}
+                public void onAnimationStart(Animation animation) {
+                }
+
                 @Override
                 public void onAnimationEnd(Animation animation) {
                     online_TXT_wait.setVisibility(View.INVISIBLE);
@@ -176,27 +182,31 @@ public class Activity_Online extends AppCompatActivity {
                 }
 
                 @Override
-                public void onAnimationRepeat(Animation animation) {}
+                public void onAnimationRepeat(Animation animation) {
+                }
             });
             fade_in.setAnimationListener(new Animation.AnimationListener() {
                 @Override
-                public void onAnimationStart(Animation animation) {}
+                public void onAnimationStart(Animation animation) {
+                }
 
                 @Override
                 public void onAnimationEnd(Animation animation) {
                     startActivity(intent);
                 }
+
                 @Override
-                public void onAnimationRepeat(Animation animation) {}
+                public void onAnimationRepeat(Animation animation) {
+                }
             });
             online_TXT_wait.startAnimation(fade_out);
-            //new Handler().postDelayed(() -> online_TXT_wait.startAnimation(fade_out), 2000);
         }
         Log.d(MyUtility.LOG_TAG, "A game is starting");
     }
 
     private void initViews() {
         Glide.with(this).load(R.drawable.memo_up_logo).into(online_IMG);
+        Glide.with(this).load(R.drawable.memo_up_app_background).into(game_IMG_background);
         ObjectAnimator scaleXAnimator = ObjectAnimator
                 .ofFloat(online_IMG, "scaleX", 1f, 1.2f, 1f);
         scaleXAnimator.setDuration(1750);
@@ -216,6 +226,7 @@ public class Activity_Online extends AppCompatActivity {
         online_TXT_wait = findViewById(R.id.online_TXT_wait);
         online_TXT_start = findViewById(R.id.online_TXT_start);
         online_IMG = findViewById(R.id.online_IMG);
+        game_IMG_background = findViewById(R.id.game_IMG_background);
     }
 
     @Override
@@ -224,5 +235,18 @@ public class Activity_Online extends AppCompatActivity {
         if (hasFocus) {
             MyUtility.hideSystemUI(this);
         }
+    }
+
+    /**
+     * Create an entry before the game starts where the player moves would be registered
+     */
+    public void createPlayerMoveEntry() {
+        databaseReference = firebaseDatabase.getReference(MyUtility.GAMES);
+        databaseReference.child(player.getSessionKey()).child(MyUtility.PLAYER_MOVE).setValue("start")
+                .addOnSuccessListener(
+                        unused -> Log.d(
+                                MyUtility.LOG_TAG, "Game is ready"))
+                .addOnFailureListener(
+                        e -> Log.d(MyUtility.LOG_TAG, "Couldn't create player entry"));
     }
 }

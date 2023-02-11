@@ -66,8 +66,6 @@ public class GameManager {
         initGameSounds();
         this.cardImageNames = cardImageNames;
         setCurrentPlayer(host.getId());
-        //setGameStateEventListener();
-        createPlayerMoveEntry();
     }
 
 
@@ -191,16 +189,6 @@ public class GameManager {
         } catch (UnsupportedOperationException e) {
             Log.d(MyUtility.LOG_TAG, "Error while trying to shuffle the images: " + e);
         }
-    }
-
-    public void createPlayerMoveEntry() {
-        databaseReference = firebaseDatabase.getReference(MyUtility.GAMES);
-        databaseReference.child(gameId).child(MyUtility.PLAYER_MOVE).setValue("start")
-                .addOnSuccessListener(
-                        unused -> Log.d(
-                                MyUtility.LOG_TAG, "gameState have been successfully saved"))
-                .addOnFailureListener(
-                        e -> Log.d(MyUtility.LOG_TAG, "Couldn't save gameState"));
     }
 
     /**
@@ -364,7 +352,7 @@ public class GameManager {
         this.currentPlayerTurn = currentPlayer;
     }
 
-    public void destroy(String sessionKey) {
+    public void destroy() {
         mediaPlayer.release();
         databaseReference.child(gameId).removeValue();
     }
