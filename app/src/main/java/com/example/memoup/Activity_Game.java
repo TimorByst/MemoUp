@@ -22,6 +22,7 @@ import com.google.android.material.imageview.ShapeableImageView;
 public class Activity_Game extends AppCompatActivity {
 
     private final int FLIP_CARD_ANIMATION_DURATION = 500;
+    private final int FACE_DOWN_CARD = 0;
     private final int TICK_SPEED = 1000;
     private final String GAME_START = "game_start";
     private final String GAME_END = "game_end";
@@ -64,7 +65,7 @@ public class Activity_Game extends AppCompatActivity {
     }
 
     private void initGamaManager() {
-        gameManager = new GameManager(boardSize, player);
+        gameManager = new GameManager(boardSize, player, this);
     }
 
     @Override
@@ -97,7 +98,6 @@ public class Activity_Game extends AppCompatActivity {
     protected void onDestroy() {
         super.onDestroy();
         gameManager.destroy();
-        finish();
     }
 
     private void runTimer() {
@@ -172,7 +172,7 @@ public class Activity_Game extends AppCompatActivity {
         }
         single_player_time.setText("00:00");
         single_player_score.setText("0");
-        gameManager.playGameSound(GAME_START, this);
+        gameManager.playGameSound(GAME_START);
     }
 
     private void clicked(View view, int finalI, int finalJ) {
@@ -216,7 +216,7 @@ public class Activity_Game extends AppCompatActivity {
     private void flipCard(View view, int row, int col) {
         gameBoard.setEnabled(false);
         ShapeableImageView imageView = (ShapeableImageView) view;
-        gameManager.playGameSound(ONE_CARD_FLIP, this);
+        gameManager.playGameSound(ONE_CARD_FLIP);
         view
                 .animate()
                 .setDuration(FLIP_CARD_ANIMATION_DURATION)
@@ -224,12 +224,24 @@ public class Activity_Game extends AppCompatActivity {
                 .withEndAction(() -> {
                     gameManager.flipCard(row, col);
                     imageView.setImageResource(gameManager.getImageResource(row, col));
-                    if (gameManager.getNumberOfFacedUpCards() == 2) {
-                        new Handler().postDelayed(
-                                () -> playTwoCardAnimation(gameManager.checkMatch(row, col)),
-                                500);
-                    } else {
-                        gameManager.setComparisonCard(row, col);
+                    if (gameManager.getCardImageNames().get(row*boardSize+col).equalsIgnoreCase("jester")) {
+                        gameManager.playRandomLaughSound();
+                        if (gameManager.getNumberOfFacedUpCards() == 2) {
+                            new Handler().postDelayed(
+                                    () -> playTwoCardAnimation(gameManager.checkMatch(row, col)),
+                                    1250);
+                        }else{
+                            new Handler().postDelayed(()
+                                    -> playJesterAnimation(view, row, col), 1250);
+                        }
+                    }else {
+                        if (gameManager.getNumberOfFacedUpCards() == 2) {
+                            new Handler().postDelayed(
+                                    () -> playTwoCardAnimation(gameManager.checkMatch(row, col)),
+                                    333);
+                        } else {
+                            gameManager.setComparisonCard(row, col);
+                        }
                     }
                     flipInProgress = false;
                 });
@@ -240,18 +252,18 @@ public class Activity_Game extends AppCompatActivity {
      * Flips two card after they were flipped up,
      * there are two types of animation this function can play,
      * they are played according to the mathFound argument.
+     *
      * @param matchFound if a match been or not
      */
     private void playTwoCardAnimation(boolean matchFound) {
         playSoundOnce = true;
-        for (int[] card : gameManager.getFlippedCards()) {
-            int row = card[0];
-            int col = card[1];
+        for (Integer card : gameManager.getFlippedCards()) {
+            int row = card / boardSize;
+            int col = card % boardSize;
             int position = row * gameManager.getBoardSize() + col;
             try {
                 View cardView = gameBoard.getChildAt(position);
                 ShapeableImageView imageView = (ShapeableImageView) cardView;
-                int FACE_DOWN_CARD = 0;
                 int SPIN_Y_CARD = -180;
                 cardView.animate().setDuration(FLIP_CARD_ANIMATION_DURATION)
                         .rotationY(matchFound ? SPIN_Y_CARD : FACE_DOWN_CARD)
@@ -259,8 +271,7 @@ public class Activity_Game extends AppCompatActivity {
                             gameManager.flipCard(row, col);
                             if (matchFound) {
                                 if (playSoundOnce) {
-                                    gameManager.playGameSound(MATCH_FOUND,
-                                            Activity_Game.this);
+                                    gameManager.playGameSound(MATCH_FOUND);
                                     playSoundOnce = false;
                                 }
                                 single_player_score
@@ -270,8 +281,7 @@ public class Activity_Game extends AppCompatActivity {
                                         .frenchToast(Math.random() < 0.5 ? "Nice!" : "Good Job!");
                             } else {
                                 if (playSoundOnce) {
-                                    gameManager.playGameSound(TWO_CARD_FLIP,
-                                            Activity_Game.this);
+                                    gameManager.playGameSound(TWO_CARD_FLIP);
                                     playSoundOnce = false;
                                 }
                                 imageView.setImageResource(gameManager.getDefaultImageResource());
@@ -286,17 +296,32 @@ public class Activity_Game extends AppCompatActivity {
         }
     }
 
+    private void playJesterAnimation(View view, int row, int col) {
+        ShapeableImageView imageView = (ShapeableImageView) view;
+        gameManager.playGameSound(ONE_CARD_FLIP);
+        view
+                .animate()
+                .setDuration(FLIP_CARD_ANIMATION_DURATION)
+                .rotationY(FACE_DOWN_CARD)
+                .withEndAction(() -> {
+                    gameManager.flipCard(row, col);
+                    imageView.setImageResource(
+                            gameManager.getDefaultImageResource());
+                    gameBoard.setEnabled(true);
+                });
+    }
+
     private void playEndGameAnimation() {
         Animation fade_in = AnimationUtils.loadAnimation(Activity_Game.this, R.anim.fade_in);
         fade_in.setAnimationListener(new Animation.AnimationListener() {
             @Override
             public void onAnimationStart(Animation animation) {
-                gameManager.playGameSound(GAME_END, Activity_Game.this);
+                gameManager.playGameSound(GAME_END);
             }
 
             @Override
             public void onAnimationEnd(Animation animation) {
-                new Handler().postDelayed(() -> finish(), 2000);
+                new Handler().postDelayed(() -> finish(), 1000);
             }
 
             @Override
