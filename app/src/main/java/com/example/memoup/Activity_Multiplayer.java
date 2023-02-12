@@ -28,6 +28,7 @@ import com.google.firebase.database.ValueEventListener;
 
 public class Activity_Multiplayer extends AppCompatActivity {
     private final int FLIP_CARD_ANIMATION_DURATION = 500;
+    private final int FACE_DOWN_CARD = 0;
     private final String GAME_END = "game_end";
     private final String MATCH_FOUND = "match_found";
     private final String ONE_CARD_FLIP = "one_card_flip";
@@ -75,9 +76,6 @@ public class Activity_Multiplayer extends AppCompatActivity {
         boardSize = gameSession.getBoardSize();
         playerHost = gameSession.getPlayerHost();
         playerGuest = gameSession.getPlayerGuest();
-        Log.d(MyUtility.LOG_TAG, player.getUsername() + " is in play");
-        Log.d(MyUtility.LOG_TAG, playerHost.getUsername() + " is the host");
-        Log.d(MyUtility.LOG_TAG, playerGuest.getUsername() + " is the guest");
         firebaseDatabase = FirebaseDatabase.getInstance();
         cardFacedUpReference = firebaseDatabase.getReference(MyUtility.GAMES)
                 .child(playerHost.getSessionKey()).child(MyUtility.PLAYER_MOVE);
@@ -98,11 +96,58 @@ public class Activity_Multiplayer extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        if (player.getId().equalsIgnoreCase(playerHost.getId())) {
+        try{
             firebaseDatabase.getReference(MyUtility.GAMES)
                     .child(gameManager.getGameId()).removeValue();
+        }catch (NullPointerException e){
+            Log.e(MyUtility.LOG_TAG, "Game " +gameManager.getGameId() +" have been already removed");
         }
-        finish();
+    }
+
+
+    private void setValueEventListener() {
+        DatabaseReference databaseReference = firebaseDatabase.getReference(MyUtility.GAMES)
+                .child(gameManager.getGameId()).child(MyUtility.PLAYER_MOVE);
+        databaseReference.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+
+                if (coldStart) {
+                    coldStart = false;
+                } else {
+                    if (gameManager.getCurrentPlayer().equalsIgnoreCase(player.getId())) {
+                        new Handler().postDelayed(() -> {
+                            /*wait a second so other user could read database*/
+                        }, 1000);
+                    }
+                    flipInProgress = true;
+                    cardsFlipped++;
+                    String position = dataSnapshot.getValue(String.class);
+                    if (position == null) {
+                        throw new NullPointerException("Couldn't load card from the database ");
+                    }
+
+                    int pos = Integer.parseInt(position.split(":", 2)[1]);
+                    int row = pos / boardSize;
+                    int col = pos % boardSize;
+                    flipCard(gameBoard.getChildAt(pos), row, col);
+                    Log.d(MyUtility.LOG_TAG, " matches found = " + gameManager.getMatchesFound());
+                    Log.d(MyUtility.LOG_TAG, " cards flipped = " + cardsFlipped);
+                    if (cardsFlipped == 2) {
+                        cardsFlipped = 0;
+                        if (gameManager.isGameOver()) {
+                            endGame();
+                            databaseReference.removeEventListener(this);
+                        }
+                    }
+                    new Handler().postDelayed(() -> flipInProgress = false, 500);
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+            }
+        });
     }
 
     private void initPlayerViews() {
@@ -126,61 +171,8 @@ public class Activity_Multiplayer extends AppCompatActivity {
         }
     }
 
-    private void setValueEventListener() {
-        DatabaseReference databaseReference = firebaseDatabase.getReference(MyUtility.GAMES)
-                .child(gameManager.getGameId()).child(MyUtility.PLAYER_MOVE);
-        databaseReference.addValueEventListener(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-
-                if (coldStart) {
-                    coldStart = false;
-                } else if (!flipInProgress) {
-                    if (gameManager.getCurrentPlayer().equalsIgnoreCase(player.getId())) {
-                        new Handler().postDelayed(() -> {
-                            /*wait a second so other user could read database*/
-                        }, 1000);
-                    }
-                    if (gameManager.getPlayerHost().getId()
-                            .equalsIgnoreCase(gameManager.getCurrentPlayer())) {
-                        Log.e(MyUtility.LOG_TAG, "It's "
-                                + gameManager.getPlayerHost().getUsername() + " turn");
-                    } else {
-                        Log.e(MyUtility.LOG_TAG, "It's "
-                                + gameManager.getPlayerGuest().getUsername() + " turn");
-                    }
-                    flipInProgress = true;
-                    String position = dataSnapshot.getValue(String.class);
-                    if (position == null) {
-                        throw new NullPointerException("Couldn't load card from the database ");
-                    }
-
-                    int pos = Integer.parseInt(position);
-                    int row = pos / boardSize;
-                    int col = pos % boardSize;
-
-                    flipCard(gameBoard.getChildAt(pos), row, col);
-                    flipInProgress = false;
-
-                    if (gameManager.isGameOver()) {
-                        if (!secondCard) {
-                            secondCard = true;
-                        } else {
-                            endGame();
-                            databaseReference.removeEventListener(this);
-                        }
-                    }
-                }
-            }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError error) {
-            }
-        });
-    }
-
     private void initViews() {
-        gameManager = new GameManager(boardSize, playerHost, playerGuest,
+        gameManager = new GameManager(boardSize, this, playerHost, playerGuest,
                 gameSession.getCardImagesNames());
         gameBoard.setRowCount(boardSize);
         gameBoard.setColumnCount(boardSize);
@@ -207,12 +199,16 @@ public class Activity_Multiplayer extends AppCompatActivity {
     }
 
     private void moveOnline(int finalI, int finalJ) {
+        gameBoard.setEnabled(false);
         if (!flipInProgress && cardsFlipped < 2
                 && gameManager.getCurrentPlayer().equalsIgnoreCase(player.getId())) {
-            cardFacedUpReference.setValue((finalI * boardSize + finalJ) + "");
+            cardFacedUpReference.setValue(player.getUsername() + ":" + (finalI * boardSize + finalJ));
         } else {
-            Log.e(MyUtility.LOG_TAG, "it's " + gameManager.getCurrentPlayer() + " turn");
+            Log.e(MyUtility.LOG_TAG, "it's "
+                    + (playerHost.getId().equalsIgnoreCase(gameManager.getCurrentPlayer())
+                    ? playerHost.getUsername() : playerGuest.getUsername()) + " turn");
         }
+        gameBoard.setEnabled(true);
     }
 
     private void findViews() {
@@ -241,7 +237,7 @@ public class Activity_Multiplayer extends AppCompatActivity {
     private void flipCard(View view, int row, int col) {
         gameBoard.setEnabled(false);
         ShapeableImageView imageView = (ShapeableImageView) view;
-        gameManager.playGameSound(ONE_CARD_FLIP, this);
+        gameManager.playGameSound(ONE_CARD_FLIP);
         view
                 .animate()
                 .setDuration(FLIP_CARD_ANIMATION_DURATION)
@@ -249,28 +245,56 @@ public class Activity_Multiplayer extends AppCompatActivity {
                 .withEndAction(() -> {
                     gameManager.flipCard(row, col);
                     imageView.setImageResource(gameManager.getImageResource(row, col));
-                    if (gameManager.getNumberOfFacedUpCards() == 2) {
-                        new Handler().postDelayed(() -> {
+                    if (gameManager.getCardImageNames().get(row * boardSize + col).equalsIgnoreCase("jester")) {
+                        gameManager.playRandomLaughSound();
+                        if (gameManager.getNumberOfFacedUpCards() == 2) {
                             matchFound = gameManager.checkMatch(row, col);
-                            playTwoCardAnimation();
-                        }, 500);
+                            new Handler().postDelayed(
+                                    this::playTwoCardAnimation,
+                                    1250);
+                        } else {
+                            new Handler().postDelayed(()
+                                    -> playJesterAnimation(view, row, col), 1250);
+                            gameManager.switchTurns();
+                        }
                     } else {
-                        gameManager.setComparisonCard(row, col);
+                        if (gameManager.getNumberOfFacedUpCards() == 2) {
+                            matchFound = gameManager.checkMatch(row, col);
+                            new Handler().postDelayed(
+                                    this::playTwoCardAnimation,
+                                    333);
+                        } else {
+                            gameManager.setComparisonCard(row, col);
+                        }
                     }
                 });
         gameBoard.setEnabled(true);
     }
 
+    private void playJesterAnimation(View view, int row, int col) {
+        ShapeableImageView imageView = (ShapeableImageView) view;
+        gameManager.playGameSound(ONE_CARD_FLIP);
+        view
+                .animate()
+                .setDuration(FLIP_CARD_ANIMATION_DURATION)
+                .rotationY(FACE_DOWN_CARD)
+                .withEndAction(() -> {
+                    gameManager.flipCard(row, col);
+                    imageView.setImageResource(
+                            gameManager.getDefaultImageResource());
+                    gameBoard.setEnabled(true);
+                });
+    }
+
     private void playTwoCardAnimation() {
         playSoundOnce = true;
-        for (int[] card : gameManager.getFlippedCards()) {
-            int row = card[0];
-            int col = card[1];
+        for (Integer card : gameManager.getFlippedCards()) {
+            int row = card / boardSize;
+            int col = card % boardSize;
             int position = row * gameManager.getBoardSize() + col;
             try {
                 View cardView = gameBoard.getChildAt(position);
                 ShapeableImageView imageView = (ShapeableImageView) cardView;
-                int FACE_DOWN_CARD = 0;
                 int SPIN_Y_CARD = -180;
                 cardView.animate().setDuration(FLIP_CARD_ANIMATION_DURATION)
                         .rotationY(matchFound ? SPIN_Y_CARD : FACE_DOWN_CARD)
@@ -278,8 +302,7 @@ public class Activity_Multiplayer extends AppCompatActivity {
                             gameManager.flipCard(row, col);
                             if (matchFound) {
                                 if (playSoundOnce) {
-                                    gameManager.playGameSound(MATCH_FOUND,
-                                            Activity_Multiplayer.this);
+                                    gameManager.playGameSound(MATCH_FOUND);
                                     playSoundOnce = false;
                                 }
                                 incrementPlayerScore();
@@ -288,8 +311,7 @@ public class Activity_Multiplayer extends AppCompatActivity {
                                         .frenchToast(Math.random() < 0.5 ? "Nice!" : "Good Job!");
                             } else {
                                 if (playSoundOnce) {
-                                    gameManager.playGameSound(TWO_CARD_FLIP,
-                                            Activity_Multiplayer.this);
+                                    gameManager.playGameSound(TWO_CARD_FLIP);
                                     playSoundOnce = false;
                                 }
                                 imageView.setImageResource(gameManager.getDefaultImageResource());
@@ -322,7 +344,7 @@ public class Activity_Multiplayer extends AppCompatActivity {
         } else if (gameManager.getHostScore() < gameManager.getGuestScore()) {
             guestWon = true;
             winner.setText(gameManager.getPlayerGuest().getUsername() + " winner!");
-        }else{
+        } else {
             winner.setText("it's a draw!");
         }
         playerHost.gameOver(false, hostWon);
@@ -338,7 +360,7 @@ public class Activity_Multiplayer extends AppCompatActivity {
         fade_in.setAnimationListener(new Animation.AnimationListener() {
             @Override
             public void onAnimationStart(Animation animation) {
-                gameManager.playGameSound(GAME_END, Activity_Multiplayer.this);
+                gameManager.playGameSound(GAME_END);
             }
 
             @Override
@@ -356,4 +378,5 @@ public class Activity_Multiplayer extends AppCompatActivity {
         winner.setAnimation(fade_in);
         winner.setVisibility(View.VISIBLE);
     }
+
 }

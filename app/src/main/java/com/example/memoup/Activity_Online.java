@@ -80,9 +80,6 @@ public class Activity_Online extends AppCompatActivity {
 
             @Override
             public void onChildRemoved(@NonNull DataSnapshot snapshot) {
-                Log.d(MyUtility.LOG_TAG, "A child hase been removed");
-                Log.d(MyUtility.LOG_TAG, player.getUsername() + ", My board size is "
-                        + gameSession.getBoardSize());
                 startGame();
             }
 
@@ -155,7 +152,11 @@ public class Activity_Online extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        finish();
+        databaseReference = firebaseDatabase.getReference()
+                .child(MyUtility.GAME_SESSIONS).child(player.getSessionKey());
+        if(databaseReference!=null){
+            databaseReference.getRef().removeValue();
+        }
     }
 
     private void startGame() {
@@ -164,7 +165,7 @@ public class Activity_Online extends AppCompatActivity {
         intent.putExtra(MyUtility.PLAYER, player);
         intent.putExtra(MyUtility.GAME_SESSIONS, gameSession);
         if (player.isCreator) {
-            new Handler().postDelayed(() -> startActivity(intent), 1000);
+            new Handler().postDelayed(() -> {startActivity(intent); finish();}, 2000);
 
         } else {
             Animation fade_in = AnimationUtils.loadAnimation(this, R.anim.fade_in);
@@ -193,6 +194,7 @@ public class Activity_Online extends AppCompatActivity {
                 @Override
                 public void onAnimationEnd(Animation animation) {
                     startActivity(intent);
+                    finish();
                 }
 
                 @Override
