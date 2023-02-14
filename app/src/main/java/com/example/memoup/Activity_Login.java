@@ -20,12 +20,10 @@ import com.firebase.ui.auth.AuthUI;
 import com.firebase.ui.auth.FirebaseAuthUIActivityResultContract;
 import com.firebase.ui.auth.data.model.FirebaseAuthUIAuthenticationResult;
 import com.google.android.material.imageview.ShapeableImageView;
-import com.google.android.material.textview.MaterialTextView;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 
 public class Activity_Login extends AppCompatActivity {
@@ -70,11 +68,13 @@ public class Activity_Login extends AppCompatActivity {
                             }, 1000);
                         }
 
-
                         @Override
                         public void onError(String errorMessage) {
                             Log.e(MyUtility.LOG_TAG,
-                                    "Error while trying to read user from the database");
+                                    "Error while trying to read user from the database " + errorMessage);
+                            if (errorMessage.equalsIgnoreCase("user not found")) {
+                                prettyLogin();
+                            }
                         }
                     }
             );
@@ -172,7 +172,10 @@ public class Activity_Login extends AppCompatActivity {
 
         AlertDialog dialog = builder.create();
         dialog.show();
-    }
+    }    private final ActivityResultLauncher<Intent> signInLauncher = registerForActivityResult(
+            new FirebaseAuthUIActivityResultContract(),
+            this::onSignInResult
+    );
 
     @Override
     public void onWindowFocusChanged(boolean hasFocus) {
@@ -180,12 +183,7 @@ public class Activity_Login extends AppCompatActivity {
         if (hasFocus) {
             MyUtility.hideSystemUI(this);
         }
-    }    private final ActivityResultLauncher<Intent> signInLauncher = registerForActivityResult(
-            new FirebaseAuthUIActivityResultContract(),
-            this::onSignInResult
-    );
-
-
+    }
 
 
 }
