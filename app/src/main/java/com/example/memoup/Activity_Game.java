@@ -224,17 +224,17 @@ public class Activity_Game extends AppCompatActivity {
                 .withEndAction(() -> {
                     gameManager.flipCard(row, col);
                     imageView.setImageResource(gameManager.getImageResource(row, col));
-                    if (gameManager.getCardImageNames().get(row*boardSize+col).equalsIgnoreCase("jester")) {
+                    if (gameManager.getCardImageNames().get(row * boardSize + col).equalsIgnoreCase("jester")) {
                         gameManager.playRandomLaughSound();
                         if (gameManager.getNumberOfFacedUpCards() == 2) {
                             new Handler().postDelayed(
                                     () -> playTwoCardAnimation(gameManager.checkMatch(row, col)),
                                     1250);
-                        }else{
+                        } else {
                             new Handler().postDelayed(()
                                     -> playJesterAnimation(view, row, col), 1250);
                         }
-                    }else {
+                    } else {
                         if (gameManager.getNumberOfFacedUpCards() == 2) {
                             new Handler().postDelayed(
                                     () -> playTwoCardAnimation(gameManager.checkMatch(row, col)),

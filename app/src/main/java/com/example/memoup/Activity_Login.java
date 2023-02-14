@@ -57,7 +57,8 @@ public class Activity_Login extends AppCompatActivity {
                                     .setWins(user.getWins())
                                     .setBestTime(user.getBestTime())
                                     .setUserImageResource(user.getUserImageResource());
-                            Log.d(MyUtility.LOG_TAG, myUser.getUsername() + " is now online " + myUser.getGamesPlayedMulti());
+                            Log.d(MyUtility.LOG_TAG, myUser.getUsername()
+                                    + " is now online " + myUser.getGamesPlayedMulti());
                             Intent intent = new Intent(Activity_Login.this,
                                     Activity_MainMenu.class);
                             intent.putExtra(MyUtility.PLAYER, myUser);
@@ -71,7 +72,8 @@ public class Activity_Login extends AppCompatActivity {
                         @Override
                         public void onError(String errorMessage) {
                             Log.e(MyUtility.LOG_TAG,
-                                    "Error while trying to read user from the database " + errorMessage);
+                                    "Error while trying to read user from the database "
+                                            + errorMessage);
                             if (errorMessage.equalsIgnoreCase("user not found")) {
                                 prettyLogin();
                             }
@@ -172,10 +174,7 @@ public class Activity_Login extends AppCompatActivity {
 
         AlertDialog dialog = builder.create();
         dialog.show();
-    }    private final ActivityResultLauncher<Intent> signInLauncher = registerForActivityResult(
-            new FirebaseAuthUIActivityResultContract(),
-            this::onSignInResult
-    );
+    }
 
     @Override
     public void onWindowFocusChanged(boolean hasFocus) {
@@ -184,6 +183,11 @@ public class Activity_Login extends AppCompatActivity {
             MyUtility.hideSystemUI(this);
         }
     }
+
+    private final ActivityResultLauncher<Intent> signInLauncher = registerForActivityResult(
+            new FirebaseAuthUIActivityResultContract(),
+            this::onSignInResult
+    );
 
 
 }

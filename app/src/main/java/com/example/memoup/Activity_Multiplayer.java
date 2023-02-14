@@ -42,7 +42,6 @@ public class Activity_Multiplayer extends AppCompatActivity {
     private AppCompatTextView player_two_win_rate;
     private AppCompatTextView player_two_score;
     private AppCompatImageView game_IMG_background;
-
     private ShapeableImageView player_one_IMG;
     private ShapeableImageView player_two_IMG;
     private ShapeableImageView game_over_IMG;
@@ -59,7 +58,6 @@ public class Activity_Multiplayer extends AppCompatActivity {
     private boolean matchFound = false;
     private int cardsFlipped = 0;
     private boolean coldStart = true;
-    private boolean secondCard;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -96,11 +94,12 @@ public class Activity_Multiplayer extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        try{
+        try {
             firebaseDatabase.getReference(MyUtility.GAMES)
                     .child(gameManager.getGameId()).removeValue();
-        }catch (NullPointerException e){
-            Log.e(MyUtility.LOG_TAG, "Game " +gameManager.getGameId() +" have been already removed");
+        } catch (NullPointerException e) {
+            Log.e(MyUtility.LOG_TAG, "Game " + gameManager.getGameId()
+                    + " have been already removed");
         }
     }
 
@@ -245,7 +244,8 @@ public class Activity_Multiplayer extends AppCompatActivity {
                 .withEndAction(() -> {
                     gameManager.flipCard(row, col);
                     imageView.setImageResource(gameManager.getImageResource(row, col));
-                    if (gameManager.getCardImageNames().get(row * boardSize + col).equalsIgnoreCase("jester")) {
+                    if (gameManager.getCardImageNames().get(row * boardSize + col)
+                            .equalsIgnoreCase("jester")) {
                         gameManager.playRandomLaughSound();
                         if (gameManager.getNumberOfFacedUpCards() == 2) {
                             matchFound = gameManager.checkMatch(row, col);

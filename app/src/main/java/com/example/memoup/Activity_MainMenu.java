@@ -43,16 +43,16 @@ public class Activity_MainMenu extends AppCompatActivity {
         super.onStart();
         FirebaseManager.getInstance().loadUser(
                 player.getId(), new FirebaseManager.OnUserLoadedListener() {
-            @Override
-            public void onUserLoaded(MyUser user) {
-                player.setUserImageResource(user.getUserImageResource());
-            }
+                    @Override
+                    public void onUserLoaded(MyUser user) {
+                        player.setUserImageResource(user.getUserImageResource());
+                    }
 
-            @Override
-            public void onError(String errorMessage) {
-                Log.d(MyUtility.LOG_TAG, "Failed to load user new image");
-            }
-        });
+                    @Override
+                    public void onError(String errorMessage) {
+                        Log.d(MyUtility.LOG_TAG, "Failed to load user new image");
+                    }
+                });
     }
 
     @Override

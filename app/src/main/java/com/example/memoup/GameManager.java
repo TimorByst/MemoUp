@@ -5,9 +5,6 @@ import android.media.MediaPlayer;
 import android.net.Uri;
 import android.util.Log;
 
-import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.FirebaseDatabase;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -40,8 +37,6 @@ public class GameManager {
     private String gameId;
     /*Used to hold the image location on board*/
     private ArrayList<String> cardImageNames;
-    private FirebaseDatabase firebaseDatabase = FirebaseDatabase.getInstance();
-    private DatabaseReference databaseReference;
     private MyUser playerHost;
     private MyUser playerGuest;
     /*Used to mark the current turn*/
@@ -56,8 +51,8 @@ public class GameManager {
         }
     }
 
-    public GameManager() {
-    }// Default Constructor
+    // Default Constructor
+    public GameManager() {}
 
     //Multiplayer constructor
     public GameManager(int boardSize, Context context, MyUser host, MyUser guest, ArrayList<String> cardImageNames) {
@@ -88,7 +83,6 @@ public class GameManager {
         currentPlayerTurn = player.getId();
         this.boardSize = boardSize;
         this.context = context;
-        firebaseDatabase = FirebaseDatabase.getInstance();
         initBoard();
         initGameSounds();
         initImageMap();
@@ -307,7 +301,8 @@ public class GameManager {
      * @return true if all matches have been found else false.
      */
     public boolean isGameOver() {
-        return matchesFound == (boardSize % 2 == 0 ? boardSize * boardSize : boardSize * boardSize - 1) / 2;
+        return matchesFound
+                == (boardSize % 2 == 0 ? boardSize * boardSize : boardSize * boardSize - 1) / 2;
     }
 
     public void playGameSound(String soundResourceName) {
@@ -375,6 +370,5 @@ public class GameManager {
 
     public void destroy() {
         mediaPlayer.release();
-        databaseReference.child(gameId).removeValue();
     }
 }

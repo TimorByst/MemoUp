@@ -10,7 +10,8 @@ public class GameSession implements Serializable {
     private int boardSize;
     private ArrayList<String> cardImagesNames;
 
-    public GameSession(){}//Default constructor
+    public GameSession() {
+    }//Default constructor
 
     public MyUser getPlayerHost() {
         return playerHost;

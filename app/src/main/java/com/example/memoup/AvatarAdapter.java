@@ -14,8 +14,8 @@ import java.util.ArrayList;
 public class AvatarAdapter extends RecyclerView.Adapter<AvatarAdapter.AvatarViewHolder> {
     private final int NUMBER_OF_AVATARS_AVAILABLE = 18;
     private final Context context;
-    private Activity_Profile.OnAvatarSelectedListener listener;
     private final ArrayList<String> avatars = new ArrayList<>();
+    private Activity_Profile.OnAvatarSelectedListener listener;
 
     {
         avatars.add("bear");

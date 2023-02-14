@@ -13,11 +13,19 @@ import com.google.gson.Gson;
 
 public class FirebaseManager {
 
+    interface OnUserLoadedListener {
+
+        void onUserLoaded(MyUser user);
+
+        void onError(String errorMessage);
+
+    }
     private static FirebaseManager firebaseManager = null;
     private final FirebaseDatabase firebaseDatabase;
     private final FirebaseAuth firebaseAuth;
     private final Gson gson = new Gson();
     private DatabaseReference databaseReference;
+
     private FirebaseManager() {
         firebaseDatabase = FirebaseDatabase.getInstance();
         firebaseAuth = FirebaseAuth.getInstance();
@@ -62,13 +70,5 @@ public class FirebaseManager {
                 listener.onError(databaseError.getMessage());
             }
         });
-    }
-
-    interface OnUserLoadedListener {
-
-        void onUserLoaded(MyUser user);
-
-        void onError(String errorMessage);
-
     }
 }

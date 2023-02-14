@@ -32,7 +32,6 @@ public class Activity_Online extends AppCompatActivity {
     private DatabaseReference databaseReference;
     private ShapeableImageView online_IMG;
     private AppCompatImageView game_IMG_background;
-
     private MaterialTextView online_TXT_wait;
     private MaterialTextView online_TXT_start;
     private MyUser player;
@@ -154,7 +153,7 @@ public class Activity_Online extends AppCompatActivity {
         super.onDestroy();
         databaseReference = firebaseDatabase.getReference()
                 .child(MyUtility.GAME_SESSIONS).child(player.getSessionKey());
-        if(databaseReference!=null){
+        if (databaseReference != null) {
             databaseReference.getRef().removeValue();
         }
     }
@@ -165,7 +164,10 @@ public class Activity_Online extends AppCompatActivity {
         intent.putExtra(MyUtility.PLAYER, player);
         intent.putExtra(MyUtility.GAME_SESSIONS, gameSession);
         if (player.isCreator) {
-            new Handler().postDelayed(() -> {startActivity(intent); finish();}, 2000);
+            new Handler().postDelayed(() -> {
+                startActivity(intent);
+                finish();
+            }, 2000);
 
         } else {
             Animation fade_in = AnimationUtils.loadAnimation(this, R.anim.fade_in);
