@@ -1,4 +1,4 @@
-# Memory Game
+# MemoUp - A Fun Memory Game For Everyone
 
 A classic memory game built with android studio.
 
