@@ -4,6 +4,7 @@ import android.app.Dialog;
 import android.content.Intent;
 import android.media.MediaPlayer;
 import android.os.Bundle;
+import android.os.Handler;
 import android.util.Log;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -16,6 +17,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.bumptech.glide.Glide;
 
 public class Activity_Profile extends AppCompatActivity {
+
     private AppCompatImageView game_IMG_background;
     private TextView profile_TXT_solo;
     private TextView profile_TXT_multi;
@@ -73,16 +75,13 @@ public class Activity_Profile extends AppCompatActivity {
     @Override
     protected void onStop() {
         super.onStop();
-        Intent intent = new Intent(this, Activity_MainMenu.class);
-        intent.putExtra(MyUtility.PLAYER, player);
-        startActivity(intent);
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
         mediaPlayer.release();
-        finish();
+        new Handler().postDelayed(this::finish, 1000);
     }
 
     private void initViews() {
@@ -122,7 +121,6 @@ public class Activity_Profile extends AppCompatActivity {
         mediaPlayer.start();
         Dialog dialog = new Dialog(this);
         dialog.setContentView(R.layout.avatar_dialog_layout);
-
         RecyclerView recyclerView = dialog.findViewById(R.id.avatar_recycler_view);
         recyclerView.setLayoutManager(new GridLayoutManager(this, 4));
 
@@ -149,8 +147,8 @@ public class Activity_Profile extends AppCompatActivity {
             MyUtility.hideSystemUI(this);
         }
     }
+
     public interface OnAvatarSelectedListener {
         void onAvatarSelected(int avatarResourceId);
     }
-
 }

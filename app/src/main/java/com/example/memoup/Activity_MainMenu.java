@@ -18,7 +18,7 @@ public class Activity_MainMenu extends AppCompatActivity {
     private AppCompatButton online_BTN_mainMenu;
     private AppCompatImageView game_IMG_background;
     private MediaPlayer mediaPlayer;
-    private MyUser player_1;
+    private MyUser player;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -28,14 +28,31 @@ public class Activity_MainMenu extends AppCompatActivity {
         startService(serviceIntent);
         setContentView(R.layout.activity_main_menu);
         Intent previous = getIntent();
-        player_1 = (MyUser) previous.getSerializableExtra(MyUtility.PLAYER);
+        player = (MyUser) previous.getSerializableExtra(MyUtility.PLAYER);
         mediaPlayer = MediaPlayer.create(this, R.raw.button_click);
-        Log.d(MyUtility.LOG_TAG, player_1.getUsername() + " Is online");
+        Log.d(MyUtility.LOG_TAG, player.getUsername() + " Is online");
         findViews();
         initButton(profile_BTN_mainMenu);
         initButton(solo_BTN_mainMenu);
         initButton(online_BTN_mainMenu);
         Glide.with(this).load(R.drawable.memo_up_app_background).into(game_IMG_background);
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        FirebaseManager.getInstance().loadUser(
+                player.getId(), new FirebaseManager.OnUserLoadedListener() {
+                    @Override
+                    public void onUserLoaded(MyUser user) {
+                        player.setUserImageResource(user.getUserImageResource());
+                    }
+
+                    @Override
+                    public void onError(String errorMessage) {
+                        Log.d(MyUtility.LOG_TAG, "Failed to load user new image");
+                    }
+                });
     }
 
     @Override
@@ -68,7 +85,6 @@ public class Activity_MainMenu extends AppCompatActivity {
     protected void onDestroy() {
         super.onDestroy();
         mediaPlayer.release();
-        finish();
     }
 
     private void clicked(int buttonId) {
@@ -85,7 +101,7 @@ public class Activity_MainMenu extends AppCompatActivity {
         } else {
             return;
         }
-        intent.putExtra(MyUtility.PLAYER, player_1);
+        intent.putExtra(MyUtility.PLAYER, player);
         intent.putExtra(MyUtility.SINGLE_PLAYER, solo);
         startActivity(intent);
     }
@@ -97,6 +113,4 @@ public class Activity_MainMenu extends AppCompatActivity {
             MyUtility.hideSystemUI(this);
         }
     }
-
-
 }

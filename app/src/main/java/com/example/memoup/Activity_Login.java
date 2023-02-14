@@ -20,12 +20,10 @@ import com.firebase.ui.auth.AuthUI;
 import com.firebase.ui.auth.FirebaseAuthUIActivityResultContract;
 import com.firebase.ui.auth.data.model.FirebaseAuthUIAuthenticationResult;
 import com.google.android.material.imageview.ShapeableImageView;
-import com.google.android.material.textview.MaterialTextView;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 
 public class Activity_Login extends AppCompatActivity {
@@ -59,7 +57,8 @@ public class Activity_Login extends AppCompatActivity {
                                     .setWins(user.getWins())
                                     .setBestTime(user.getBestTime())
                                     .setUserImageResource(user.getUserImageResource());
-                            Log.d(MyUtility.LOG_TAG, myUser.getUsername() + " is now online " + myUser.getGamesPlayedMulti());
+                            Log.d(MyUtility.LOG_TAG, myUser.getUsername()
+                                    + " is now online " + myUser.getGamesPlayedMulti());
                             Intent intent = new Intent(Activity_Login.this,
                                     Activity_MainMenu.class);
                             intent.putExtra(MyUtility.PLAYER, myUser);
@@ -70,11 +69,14 @@ public class Activity_Login extends AppCompatActivity {
                             }, 1000);
                         }
 
-
                         @Override
                         public void onError(String errorMessage) {
                             Log.e(MyUtility.LOG_TAG,
-                                    "Error while trying to read user from the database");
+                                    "Error while trying to read user from the database "
+                                            + errorMessage);
+                            if (errorMessage.equalsIgnoreCase("user not found")) {
+                                prettyLogin();
+                            }
                         }
                     }
             );
@@ -180,12 +182,12 @@ public class Activity_Login extends AppCompatActivity {
         if (hasFocus) {
             MyUtility.hideSystemUI(this);
         }
-    }    private final ActivityResultLauncher<Intent> signInLauncher = registerForActivityResult(
+    }
+
+    private final ActivityResultLauncher<Intent> signInLauncher = registerForActivityResult(
             new FirebaseAuthUIActivityResultContract(),
             this::onSignInResult
     );
-
-
 
 
 }

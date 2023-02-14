@@ -16,9 +16,10 @@ public class MyMusicService extends Service {
         mediaPlayer = MediaPlayer.create(this, R.raw.memo_up_soundtrack);
         mediaPlayer.setLooping(true);
     }
+
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        if(!isRunning) {
+        if (!isRunning) {
             mediaPlayer.seekTo(currentPosition);
             mediaPlayer.start();
             isRunning = true;

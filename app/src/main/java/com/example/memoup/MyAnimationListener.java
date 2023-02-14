@@ -26,11 +26,10 @@ class MyAnimationListener implements Animation.AnimationListener {
     @Override
     public void onAnimationStart(Animation animation) {
     }
-
     @Override
     public void onAnimationEnd(Animation animation) {
-        if(nextAnimation != null){
-            if(nextView.getVisibility() == View.INVISIBLE){
+        if (nextAnimation != null) {
+            if (nextView.getVisibility() == View.INVISIBLE) {
                 nextView.setVisibility(View.VISIBLE);
             }
             nextView.startAnimation(nextAnimation);
@@ -40,7 +39,6 @@ class MyAnimationListener implements Animation.AnimationListener {
             activity.finish();
         }
     }
-
     @Override
     public void onAnimationRepeat(Animation animation) {
     }

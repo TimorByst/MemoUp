@@ -5,9 +5,6 @@ import android.media.MediaPlayer;
 import android.net.Uri;
 import android.util.Log;
 
-import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.FirebaseDatabase;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -33,54 +30,59 @@ public class GameManager {
     /*Used to indicate if a card is faced up or down (true - up, false - down)*/
     private ArrayList<Boolean> cardFacedUp;
     /*Used to hold the current faced up cards indexes*/
-    private ArrayList<int[]> currentFacedUpCards = new ArrayList<int[]>() {
-        {
-            add(new int[2]);
-            add(new int[2]);
-        }
-    };
+    private ArrayList<Integer> currentFacedUpCards = new ArrayList<>();
     /*Used to hold the image that is being compared to*/
     private String comparisonCard;
     /*Game id*/
     private String gameId;
     /*Used to hold the image location on board*/
     private ArrayList<String> cardImageNames;
-    private FirebaseDatabase firebaseDatabase = FirebaseDatabase.getInstance();
-    private DatabaseReference databaseReference;
     private MyUser playerHost;
     private MyUser playerGuest;
     /*Used to mark the current turn*/
     private String currentPlayerTurn;
     private MediaPlayer mediaPlayer;
+    private Context context;
 
-    public GameManager() {
-    }// Default Constructor
+    {
+        {
+            currentFacedUpCards.add(0);
+            currentFacedUpCards.add(0);
+        }
+    }
 
-    public GameManager(int boardSize, MyUser host, MyUser guest, ArrayList<String> cardImageNames) {
+    // Default Constructor
+    public GameManager() {}
+
+    //Multiplayer constructor
+    public GameManager(int boardSize, Context context, MyUser host, MyUser guest, ArrayList<String> cardImageNames) {
         gameId = host.getSessionKey();
         this.playerHost = host;
         this.playerGuest = guest;
         this.boardSize = boardSize;
+        this.context = context;
         initBoard();
         initImageMap();
         initGameSounds();
         this.cardImageNames = cardImageNames;
         setCurrentPlayer(host.getId());
+        facedUpCards = 0;
     }
 
+    //Single-player constructor
 
     /**
      * GameManager constructor, receives the board size and initializes game
      *
      * @param boardSize the size of the board
      */
-    public GameManager(int boardSize, MyUser player) {
+    public GameManager(int boardSize, MyUser player, Context context) {
 
         gameId = player.getSessionKey();
         playerHost = player;
         currentPlayerTurn = player.getId();
         this.boardSize = boardSize;
-        firebaseDatabase = FirebaseDatabase.getInstance();
+        this.context = context;
         initBoard();
         initGameSounds();
         initImageMap();
@@ -140,6 +142,8 @@ public class GameManager {
         sounds.put("match_found", R.raw.match_found);
         sounds.put("one_card_flip", R.raw.one_card_flip);
         sounds.put("two_card_flip", R.raw.two_card_flip);
+        sounds.put("jester_laugh", R.raw.jester_laugh);
+        sounds.put("jester_laugh_two", R.raw.jester_laugh_two);
     }
 
     /**
@@ -201,7 +205,7 @@ public class GameManager {
     public void flipCard(int row, int col) {
         cardFacedUp.set(row * boardSize + col, !cardFacedUp.get(row * boardSize + col));
         if (cardFacedUp.get(row * boardSize + col)) {
-            currentFacedUpCards.set(facedUpCards, new int[]{row, col});
+            currentFacedUpCards.set(facedUpCards, row * boardSize + col);
             facedUpCards++;
         } else {
             facedUpCards--;
@@ -230,7 +234,6 @@ public class GameManager {
         }
         if (playerGuest != null) {
             switchTurns();
-            Log.d(MyUtility.LOG_TAG, "The turn was passed to " + currentPlayerTurn);
         }
         return false;
     }
@@ -285,6 +288,10 @@ public class GameManager {
         }
     }
 
+    public int getMatchesFound() {
+        return matchesFound;
+    }
+
     /**
      * This function checks if all of the matches have been found
      * by comparing the current number of matches
@@ -294,10 +301,11 @@ public class GameManager {
      * @return true if all matches have been found else false.
      */
     public boolean isGameOver() {
-        return matchesFound == (boardSize % 2 == 0 ? boardSize : boardSize - 1) * boardSize / 2;
+        return matchesFound
+                == (boardSize % 2 == 0 ? boardSize * boardSize : boardSize * boardSize - 1) / 2;
     }
 
-    public void playGameSound(String soundResourceName, Context context) {
+    public void playGameSound(String soundResourceName) {
         mediaPlayer.reset();
         try {
             mediaPlayer.setDataSource(context,
@@ -309,6 +317,14 @@ public class GameManager {
             mediaPlayer.start();
         } catch (IOException e) {
             Log.d(MyUtility.LOG_TAG, "GameManager: MediaPlayer error: " + e.getMessage());
+        }
+    }
+
+    public void playRandomLaughSound() {
+        if (Math.random() < 0.5) {
+            playGameSound("jester_laugh");
+        } else {
+            playGameSound("jester_laugh_two");
         }
     }
 
@@ -332,7 +348,7 @@ public class GameManager {
         return facedUpCards;
     }
 
-    public ArrayList<int[]> getFlippedCards() {
+    public ArrayList<Integer> getFlippedCards() {
         return currentFacedUpCards;
     }
 
@@ -354,6 +370,5 @@ public class GameManager {
 
     public void destroy() {
         mediaPlayer.release();
-        databaseReference.child(gameId).removeValue();
     }
 }
